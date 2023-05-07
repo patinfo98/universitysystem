@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+          crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+
+
+    <title>edit Student</title>
+</head>
+<body>
+<div class="container-fluid text-center d-flex align-items-center justify-content-center" style="height: 100vh">
+
+    <div class="border border-secondary p-3 rounded">
+    <h2 class="mb-5">Edit Staff</h2>
+
+            <form action="#" th:action="@{/update/teachers/{id}(id=${staff.id})}" method="post" th:object="${staff}">
+
+                        <p>
+                            <input type="hidden" name="id" th:value="${id}"/>
+                        </p>
+                        <p>
+                            <input type="text"  name="first_name" th:field="${staff.firstName}" class="form-control" placeholder="first name" required/>
+                        </p>
+                        <p>
+                            <input type="text" name="last_name" th:field="${staff.lastName}" class="form-control" placeholder="second name" required/>
+                        </p>
+                        <p>
+                            <input type="email" name="email" th:field="${staff.email}" class="form-control" placeholder="email" required/>
+                        </p>
+                        <p>
+                            <input type="password" name="password" th:field="${staff.password}" class="form-control" placeholder="password" required/>
+                        </p>
+                <p>
+                    <select class="form-control" name="role">
+                        <option value="">Select a role</option>
+                        <option th:each="role:${roles}"
+                                th:value="${role}"
+                                th:text="${role}"
+                                th:field="${staff.role}">
+                        </option>
+                    </select>
+                </p>
+                        <p>
+                            <input type="submit" value="update" class="btn btn-primary"/>
+                        </p>
+
+
+
+
+            </form>
+        </div>
+
+    </div>
+
+
+
+
+</body>
+</html>

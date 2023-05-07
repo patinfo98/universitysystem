@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+        crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+
+
+  <title>students</title>
+</head>
+<body>
+<div class="container-fluid text-center d-flex align-items-center justify-content-center">
+  <div class="border border-secondary p-3 rounded my-5">
+    <h2 class="my-2">Teachers</h2>
+    <p><button id="btn" class="btn btn-primary" onclick="showPopup()">Add teacher</button> </p>
+    <div id="popup" style="display:none;" class="border border-secondary p-4 rounded">
+        <h2 class="mb-5">Add Teacher</h2>
+        <form action="#" th:action="@{/add_teacher}" method="post" th:object="${staff}">
+
+          <p>
+            <input type="text"  name="first_name" th:field="${staff.firstName}" class="form-control" placeholder="first name" required/>
+          </p>
+          <p>
+            <input type="text" name="last_name" th:field="${staff.lastName}" class="form-control" placeholder="second name" required/>
+          </p>
+          <p>
+            <input type="email" name="email" th:field="${staff.email}" class="form-control" placeholder="email" required/>
+          </p>
+          <p>
+            <input type="password" name="password" th:field="${staff.password}" class="form-control" placeholder="password" required/>
+          </p>
+          <p>
+            <select class="form-control" name="role">
+              <option value="">Select a role</option>
+              <option  th:each="role:${roles}"
+                      th:value="${role}"
+                      th:text="${role}">
+              </option>
+            </select>
+          </p>
+
+          <p>
+            <input type="submit" value="post" class="btn btn-primary"/>
+          </p>
+
+        </form>
+      </div>
+    <table class="table table-striped table-responsive-md">
+      <thead>
+      <tr>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Role</th>
+        <th>Edit</th>
+        <th>Delete</th>
+        <th>Show Courses</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="teacher : ${staffs}">
+        <td th:text="${teacher.getFirstName()}"></td>
+        <td th:text="${teacher.getLastName()}"></td>
+        <td th:text="${teacher.getRole()}"></td>
+        <td><a th:href="@{/edit/teachers/{id}(id=${teacher.getId()})}" class="btn btn-primary"><i class="fas fa-user-edit ml-2"></i></a></td>
+        <td><a th:href="@{/delete/teachers/{id}(id=${teacher.getId()})}" class="btn btn-primary"><i class="fas fa-user-times ml-2"></i></a></td>
+        <td><a th:href="@{/show/teachers/courses/{id}(id=${teacher.getId()})}" class="btn btn-primary"><i class="fas fa-user-times ml-2"></i></a></td>
+
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</body>
+<script>
+  function showPopup() {
+    var popup = document.getElementById("popup");
+    popup.style.display="block";
+    popup.class="container-fluid text-center d-flex align-items-center justify-content-center";
+    popup.style.zIndex="9999";
+    popup.style.position="fixed";
+    popup.style.top="50%";
+    popup.style.left="50%";
+    popup.style.transform="translate(-50%, -50%)";
+    popup.style.background="white";
+  }
+  function closePopup(){
+    var popup = document.getElementById("popup");
+    popup.style.display="none";
+  }
+  var popup = document.getElementById("popup");
+  var btn = document.getElementById("btn");
+  document.addEventListener("click", close);
+
+
+  function close (event) {
+    if(event.target!=popup && !popup.contains(event.target) && event.target != btn){
+      closePopup();
+    }
+
+  }
+</script>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+        crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+
+
+  <title>edit Course</title>
+</head>
+<body>
+<div class="container-fluid text-center d-flex align-items-center justify-content-center" style="height: 100vh">
+  <div class="border border-secondary p-4 rounded">
+  <h2 class="mb-5">Edit Course</h2>
+
+      <form th:action="@{/add/preference/{id}(id=${id})}"  method="post">
+
+            <p>
+              <select class="form-control" name="room" >
+                <option value="">Select a Room</option>
+                <option th:each="room:${rooms}"
+                        th:value="${room.getId()}"
+                        th:text="${room.getName()}">
+                </option>
+              </select>
+            </p>
+            <p>
+              <select class="form-control" name="day" >
+                <option value="">Select a Day</option>
+                <option th:each="da:${days}"
+                        th:value="${da}"
+                        th:text="${da}">
+                </option>
+              </select>
+            </p>
+            <p>
+              <input type="time" min="08:00" name="time" id="time" th:attr="timeslot=${hoursperweek}" class="form-control" placeholder="start-time" required/>
+                <script>
+                    const timeSetter = document.getElementById("time");
+                    const hoursPerWeek = parseInt(timeSetter.getAttribute("timeslot"));
+                    const until = 23- hoursPerWeek;
+                    const upperBound = until.toString() + ":00";
+                    timeSetter.max = upperBound
+                </script>
+            </p>
+            <p>
+              <input type="submit" value="post" class="btn btn-primary"/>
+            </p>
+
+      </form>
+    </div>
+
+  </div>
+
+
+
+</body>
+
+</html>

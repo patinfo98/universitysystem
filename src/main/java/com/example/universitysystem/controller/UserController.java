@@ -3,6 +3,7 @@ package com.example.universitysystem.controller;
 import com.example.universitysystem.model.*;
 import com.example.universitysystem.repository.CourseRoomTimePreferenceRepository;
 import com.example.universitysystem.repository.StudentCourseRepository;
+import com.example.universitysystem.repository.TimetableRepository;
 import com.example.universitysystem.service.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,12 +30,13 @@ public class UserController {
 
     private final CourseService courseService;
 
+    private final TimetableRepository timetableRepository;
     private final StaffService staffService;
     private UserService.userType role;
     private final CourseRoomTimePreferenceRepository courseRoomTimePreferenceRepository;
 
     @Autowired
-    public UserController(StudentCourseRepository studentCourseRepository, UserService userService, RoomService roomService, StudentCourseService studentCourseService, StudentService studentService, TimeTableService timeTableService, CourseService courseService, StaffService staffService, CourseRoomTimePreferenceRepository courseRoomTimePreferenceRepository) {
+    public UserController(StudentCourseRepository studentCourseRepository, UserService userService, RoomService roomService, StudentCourseService studentCourseService, StudentService studentService, TimeTableService timeTableService, CourseService courseService, StaffService staffService, CourseRoomTimePreferenceRepository courseRoomTimePreferenceRepository, TimetableRepository timetableRepository) {
         this.studentCourseRepository = studentCourseRepository;
         this.userService = userService;
         this.roomService = roomService;
@@ -44,6 +46,8 @@ public class UserController {
         this.courseService = courseService;
         this.staffService = staffService;
         this.courseRoomTimePreferenceRepository = courseRoomTimePreferenceRepository;
+        this.timetableRepository = timetableRepository;
+
     }
 
     @GetMapping("/students")
@@ -305,6 +309,24 @@ public class UserController {
         courseService.saveRoomTimePreference(roomService.findById(roomId), time, day, id);
         return "redirect:/courses";
     }
+
+    @GetMapping("/courses/{id}/changetime")
+    public String changeTime(@PathVariable("id") int id, Model model) {
+        model.addAttribute("days", days.values());
+        model.addAttribute("rooms", roomService.findAll());
+        model.addAttribute("hoursperweek", courseService.findById(id).getHoursPerWeek());
+        return "edit_timetable";
+    }
+
+    @PostMapping("/edit/timetable/{id}")
+    public String editTime(@PathVariable("id") int courseid,  @RequestParam("time") LocalTime time, @RequestParam("room") int roomId, @RequestParam("day") days day ){
+        timeTableService.save(courseid, time, roomService.findById(roomId), day);
+        return "redirect:/courses";
+    }
+
+
+
+
 
 
     @GetMapping("/rooms")

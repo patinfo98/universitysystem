@@ -48,6 +48,7 @@
         <td><a th:href="@{/edit/courses/{id}(id=${course.getId()})}" class="btn btn-primary"><i class="fas fa-user-edit ml-2"></i></a></td>
         <td><a th:href="@{/delete/courses/{id}(id=${course.getId()})}" class="btn btn-primary"><i class="fas fa-user-times ml-2"></i></a></td>
         <td><a th:href="@{/courses/{id}/add_preferences(id=${course.getId()})}" class="btn btn-primary"><i class="fas fa-user-list ml-2"></i></a></td>
+        <td><a th:href="@{/courses/{id}/changetime(id=${course.getId()})}" class="btn btn-primary"><i class="fas fa-user-edit ml-2"></i></a></td>
 
       </tr>
       </tbody>

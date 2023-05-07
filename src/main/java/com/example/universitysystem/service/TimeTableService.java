@@ -79,6 +79,17 @@ public class TimeTableService {
         return !timeslots.isEmpty();
     }
 
+    public void save(int id, LocalTime start, Room room, days day){
+        timetableRepository.deleteByTeacherCourseId(id);
+        TimeTable table = new TimeTable();
+        table.setTeacherCourse(courseService.findById(id));
+        table.setDay(day);
+        table.setRoom(room);
+        table.setStart(start);
+        table.setEnd(start.plus(Duration.ofHours(courseService.findById(id).getHoursPerWeek())));
+        timetableRepository.save(table);
+    }
+
 
     //räume checken
     //wenn overlap dann unterscheidung ob selbes studium wenn ja dann weiter wenn nein anderer raum

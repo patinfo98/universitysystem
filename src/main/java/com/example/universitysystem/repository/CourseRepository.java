@@ -17,5 +17,7 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     @Query("SELECT c FROM Course c WHERE c NOT IN (SELECT t.teacherCourse FROM TimeTable t)")
     List<Course> findCoursesNotInTimetable();
 
+    List<Course> findByStaffId(int id);
+
 
 }

@@ -20,10 +20,6 @@ public class StudentService {
         this.userRepository = userRepository;
     }
 
-    public List<Student> findAll() {
-        return studentRepository.findAll();
-    }
-
     public void deleteById(int id) {
         studentCourseRepository.deleteByStudentId(id);
         studentRepository.deleteById(id);

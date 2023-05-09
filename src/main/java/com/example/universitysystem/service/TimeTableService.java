@@ -7,12 +7,10 @@ import com.example.universitysystem.repository.RoomRepository;
 import com.example.universitysystem.repository.TimetableRepository;
 import org.springframework.stereotype.Service;
 
+import java.sql.Time;
 import java.time.Duration;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,40 +36,38 @@ public class TimeTableService {
 
     }
 
-
-    public List<TimeTable> findAll() {
-        return timetableRepository.findAll();
-    }
-
-    public List<TimeTable> findByCourses(List<Course> courses) {
-        return timetableRepository.findByTeacherCourseIn(courses);
-    }
-
     public List<TimeTable> findByTeacherCourseStaff_Id(int id) {
         return timetableRepository.findByTeacherCourse_Staff_Id(id);
     }
 
-
     public boolean existsOverlap(CourseRoomTimePreference preference, List<TimeTable> timeTable) {
         timeslots.clear();
         LocalTime start = preference.getTime();
-        Duration time = Duration.ofHours(preference.getCourse().getHoursPerWeek());
+        LocalTime end = preference.getEndtime();
+        Duration duration = Duration.between(start, end);
         for (TimeTable timeslot : timeTable) {
             LocalTime start2 = timeslot.getStart();
-            Duration time2 = Duration.ofHours(timeslot.getTeacherCourse().getHoursPerWeek());
-            if ((((start.isBefore(start2) || start.equals(start2)) && start.plus(time).isAfter(start2)) || ((start2.isBefore(start) || start.equals(start2)) && start2.plus(time2).isAfter(start)))) {
+            Duration duration2 = Duration.ofHours(Duration.between(timeslot.getStart(), timeslot.getEnd()).toHours());
+            if ((((start.isBefore(start2) || start.equals(start2)) && start.plus(duration).isAfter(start2)) || ((start2.isBefore(start) || start.equals(start2)) && start2.plus(duration2).isAfter(start)))) {
                 timeslots.add(timeslot);
             }
         }
         return !timeslots.isEmpty();
     }
 
-    public boolean overlap(List<TimeTable> timeslot, LocalTime start, Course course) {
+    public boolean overlap(List<TimeTable> timeslot,LocalTime start, Course course ) {
         timeslots.clear();
-        Duration time = Duration.ofHours(course.getHoursPerWeek());
+        int timeUsed = 0;
+        List<TimeTable> table = timetableRepository.findByTeacherCourseId(course.getId());
+        for(TimeTable time : table) {
+            LocalTime begin = time.getStart();
+            LocalTime end = time.getEnd();
+            timeUsed += Duration.between(begin, end).toHoursPart();
+        }
+        Duration time = Duration.ofHours(course.getHoursPerWeek()).minus(Duration.ofHours(timeUsed));
         for (TimeTable slot : timeslot) {
             LocalTime start2 = slot.getStart();
-            Duration time2 = Duration.ofHours(slot.getTeacherCourse().getHoursPerWeek());
+            Duration time2 = Duration.ofHours(Duration.between(slot.getStart(), slot.getEnd()).toHours());
             if ((((start.isBefore(start2) || start.equals(start2)) && start.plus(time).isAfter(start2)) || ((start2.isBefore(start) || start.equals(start2)) && start2.plus(time2).isAfter(start)))) {
                 timeslots.add(slot);
             }
@@ -79,32 +75,47 @@ public class TimeTableService {
         return !timeslots.isEmpty();
     }
 
-    public void save(int id, LocalTime start, Room room, days day){
+    public void save(int id, LocalTime start, LocalTime end, Room room, days day){
         timetableRepository.deleteByTeacherCourseId(id);
         TimeTable table = new TimeTable();
-        table.setTeacherCourse(courseService.findById(id));
+        table.setTeacherCourse(courseRepository.findById(id));
         table.setDay(day);
         table.setRoom(room);
         table.setStart(start);
-        table.setEnd(start.plus(Duration.ofHours(courseService.findById(id).getHoursPerWeek())));
+        table.setEnd(end);
         timetableRepository.save(table);
     }
+    public boolean courseFull(CourseRoomTimePreference preference){
+        if(timetableRepository.existsByTeacherCourseId(preference.getCourse().getId())) {
+            List<TimeTable> allCourseTimes = timetableRepository.findByTeacherCourseId(preference.getCourse().getId());
+            int totalhours = 0;
+            int hour = Duration.between(preference.getTime(), preference.getEndtime()).toHoursPart();
+            for (TimeTable table : allCourseTimes) {
+                LocalTime start = table.getStart();
+                LocalTime end = table.getEnd();
+                int hours = Duration.between(start, end).toHoursPart();
+                totalhours += hours;
 
 
-    //räume checken
-    //wenn overlap dann unterscheidung ob selbes studium wenn ja dann weiter wenn nein anderer raum
+            }
+            if (totalhours == courseRepository.findById(preference.getCourse().getId()).getHoursPerWeek()) {
+                return true;
+            }
+        }
+        return false;
+    }
     public void createTimeTable() {
         timetableRepository.deleteAll();
         for (days day : days.values()) {
             for (CourseRoomTimePreference preference : courseRoomTimePreferenceRepository.findByDay(day)) {
-                if (!timetableRepository.existsByTeacherCourseId(preference.getCourse().getId())) {
+                if (!courseFull(preference)) {
                     if (!existsOverlap(preference, timetableRepository.findByDay(day))) {
                         TimeTable timeSlot = new TimeTable();
                         timeSlot.setTeacherCourse(preference.getCourse());
                         timeSlot.setDay(preference.getDay());
                         timeSlot.setStart(preference.getTime());
                         timeSlot.setRoom(preference.getRoom());
-                        timeSlot.setEnd(timeSlot.getStart().plus(Duration.ofHours(timeSlot.getTeacherCourse().getHoursPerWeek())));
+                        timeSlot.setEnd(timeSlot.getStart().plus(Duration.between(preference.getTime(), preference.getEndtime())));
                         timetableRepository.save(timeSlot);
                     } else {
                         boolean sameStudyExists = false;
@@ -123,7 +134,7 @@ public class TimeTableService {
                                 timeSlot.setDay(preference.getDay());
                                 timeSlot.setStart(preference.getTime());
                                 timeSlot.setRoom(room);
-                                timeSlot.setEnd(timeSlot.getStart().plus(Duration.ofHours(timeSlot.getTeacherCourse().getHoursPerWeek())));
+                                timeSlot.setEnd(timeSlot.getStart().plus(Duration.between(preference.getTime(), preference.getEndtime())));
                                 timetableRepository.save(timeSlot);
                             }
                         }
@@ -133,10 +144,10 @@ public class TimeTableService {
         }
         for (days day : days.values()) {
 
-            List<Course> courses = courseRepository.findCoursesNotInTimetable();
+            List<Course> courses = courseService.findNotFull();
             List<Room> rooms = roomRepository.findAll();
             for (Course course : courses) {
-                for (int i = 8; i <= 14; i++) {
+                for (int i = 8; i <= 12; i++) {
                     LocalTime time = LocalTime.of(i, 0);
                     if (!overlap(timetableRepository.findByDay(day), time, course)) {
 
@@ -146,7 +157,14 @@ public class TimeTableService {
                         slot.setDay(day);
                         slot.setStart(time);
                         slot.setRoom(room);
-                        slot.setEnd(slot.getStart().plus(Duration.ofHours(slot.getTeacherCourse().getHoursPerWeek())));
+                        int used = 0;
+                        List<TimeTable> table = timetableRepository.findByTeacherCourseId(course.getId());
+                        for(TimeTable t : table) {
+                            LocalTime begin = t.getStart();
+                            LocalTime end = t.getEnd();
+                            used += Duration.between(begin, end).toHoursPart();
+                        }
+                        slot.setEnd(slot.getStart().plus(Duration.ofHours(slot.getTeacherCourse().getHoursPerWeek()).minus(Duration.ofHours(used))));
 
                         timetableRepository.save(slot);
                         break;
@@ -161,6 +179,8 @@ public class TimeTableService {
                         if (!sameStudyExists && timeslots != null && !timeslots.isEmpty()) {
                             Room room;
                             List<Integer> blocked = timeslots.stream().map(TimeTable::getRoom).map(Room::getId).collect(Collectors.toList());
+                            HashSet<Integer> noDups = new HashSet<>(blocked);
+                            blocked = new ArrayList<>(noDups);
                             Collections.sort(blocked);
                             List<Integer> all = roomRepository.findAll().stream().map(Room::getId).collect(Collectors.toList());
                             Collections.sort(all);
@@ -176,7 +196,14 @@ public class TimeTableService {
                                 timeSlot2.setDay(day);
                                 timeSlot2.setStart(time);
                                 timeSlot2.setRoom(room);
-                                timeSlot2.setEnd(timeSlot2.getStart().plus(Duration.ofHours(timeSlot2.getTeacherCourse().getHoursPerWeek())));
+                                int used = 0;
+                                List<TimeTable> table = timetableRepository.findByTeacherCourseId(course.getId());
+                                for(TimeTable t : table) {
+                                    LocalTime begin = t.getStart();
+                                    LocalTime end = t.getEnd();
+                                    used += Duration.between(begin, end).toHoursPart();
+                                }
+                                timeSlot2.setEnd(timeSlot2.getStart().plus(Duration.ofHours(timeSlot2.getTeacherCourse().getHoursPerWeek()).minus(Duration.ofHours(used))));
                                 timetableRepository.save(timeSlot2);
                                 break;
                             }

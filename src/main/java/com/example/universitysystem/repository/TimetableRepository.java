@@ -6,6 +6,7 @@ import com.example.universitysystem.model.TimeTable;
 import com.example.universitysystem.model.days;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.sql.Time;
 import java.util.List;
 
 public interface TimetableRepository extends JpaRepository<TimeTable, Integer> {
@@ -22,6 +23,8 @@ public interface TimetableRepository extends JpaRepository<TimeTable, Integer> {
     void deleteByTeacherCourseId(int id);
 
     TimeTable findByTeacherCourse(Course course);
+
+    List<TimeTable> findByTeacherCourseId(int id);
 
 
 }

@@ -18,11 +18,7 @@
 
         <div class="border border-secondary p-3 rounded my-5">
             <div th:if="${role == 'admin'}">
-                    <div  th:if="${preferenceNotUsed == true}" id="popup" style="display:none;" class="border border-secondary p-4 rounded">
-                        <p>One of your preferences was not considered!</p>
-                    </div>
-
-                <p>
+                    <p>
                 <a th:href="@{/students}" class="btn btn-primary">Edit Students</a>
                 <a th:href="@{/teachers}" class="btn btn-primary">Edit Teachers</a>
                 <a th:href="@{/courses}" class="btn btn-primary">Edit Courses</a>
@@ -34,6 +30,11 @@
             </div>
             <div th:if="${role == 'assistant'}">
                 <p><a th:href="@{/courses/assistant/{id}(id=${id})}" class="btn btn-primary">Edit Courses</a></p>
+            </div>
+            <div th:if="${role=='assistant' or role == 'admin'}">
+                <div  th:if="${preferenceNotUsed == true}" id="popup" style="display:none;" class="border border-secondary p-4 rounded">
+                    <p>One of your preferences was not considered!</p>
+                </div>
             </div>
             <div th:if="${role == 'student'}">
                 <p><a th:href="@{/show/student/courses/{id}(id=${id})}" class="btn btn-primary">Edit Courses</a></p>

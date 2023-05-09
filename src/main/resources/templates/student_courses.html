@@ -38,8 +38,11 @@
         <td th:text="${course.getTeacherCourse().getStaff().getLastName()}"></td>
         <td th:text="${course.getTeacherCourse().getType()}"></td>
         <td th:text="${course.getTeacherCourse().getHoursPerWeek()}"></td>
-        <td><a th:href="@{/delete/student/courses/{id}/{studentid}(id=${course.getTeacherCourse().getId()}, studentid=${course.getStudent().getId()}  )}" class="btn btn-primary"><i class="fas fa-user-times ml-2"></i></a></td>
-
+        <td>
+        <form action="#" th:action="@{/delete/student/courses/{id}/{studentid}(id=${course.getTeacherCourse().getId()}, studentid=${course.getStudent().getId()}  )}" method="post" >
+          <button type="submit" class="btn btn-primary"><i class="fas fa-user-times ml-2"></i></button>
+        </form>
+        </td>
       </tr>
       </tbody>
     </table>

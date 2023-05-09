@@ -1,13 +1,12 @@
 package com.example.universitysystem.service;
 
 import com.example.universitysystem.model.*;
-import com.example.universitysystem.repository.CourseRepository;
-import com.example.universitysystem.repository.CourseRoomTimePreferenceRepository;
-import com.example.universitysystem.repository.StudentCourseRepository;
-import com.example.universitysystem.repository.TimetableRepository;
+import com.example.universitysystem.repository.*;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -15,42 +14,21 @@ public class CourseService {
     private final StudentCourseRepository studentCourseRepository;
     private final CourseRepository courseRepository;
     private final CourseRoomTimePreferenceRepository courseRoomTimePreferenceRepository;
-    private final UserService userService;
+    private final UserRepository userRepository;
     private final TimetableRepository timetableRepository;
 
 
-    public CourseService(StudentCourseRepository studentCourseRepository, CourseRepository courseRepository, CourseRoomTimePreferenceRepository courseRoomTimePreferenceRepository, UserService userService, TimetableRepository timetableRepository) {
+    public CourseService(StudentCourseRepository studentCourseRepository, CourseRepository courseRepository, CourseRoomTimePreferenceRepository courseRoomTimePreferenceRepository, UserRepository userRepository, TimetableRepository timetableRepository) {
         this.studentCourseRepository = studentCourseRepository;
         this.courseRepository = courseRepository;
         this.courseRoomTimePreferenceRepository = courseRoomTimePreferenceRepository;
-        this.userService = userService;
+        this.userRepository = userRepository;
         this.timetableRepository = timetableRepository;
     }
 
     public Course add(Course course, int teacherid) {
-        Staff teacher = (Staff) userService.findById(teacherid);
+        Staff teacher = (Staff) userRepository.findById(teacherid);
         course.setStaff(teacher);
-        return courseRepository.save(course);
-    }
-
-    public void delete(Course course) {
-        studentCourseRepository.deleteByTeacherCourseId(course.getId());
-        courseRepository.delete(course);
-    }
-
-    public List<Course> findByStaff(Staff staff) {
-        return courseRepository.findByStaff(staff);
-    }
-
-    public List<Course> findAll() {
-        return courseRepository.findAll();
-    }
-
-    public Course findById(int id) {
-        return courseRepository.findById(id);
-    }
-
-    public Course saveCourse(Course course) {
         return courseRepository.save(course);
     }
 
@@ -62,13 +40,37 @@ public class CourseService {
     }
 
 
-    public CourseRoomTimePreference saveRoomTimePreference(Room room, LocalTime starttime, days day, int courseid) {
+    public CourseRoomTimePreference saveRoomTimePreference(Room room, LocalTime starttime, LocalTime endtime, days day, int courseid) {
         CourseRoomTimePreference courseRoomTimePreference = new CourseRoomTimePreference();
         courseRoomTimePreference.setRoom(room);
         courseRoomTimePreference.setCourse(courseRepository.findById(courseid));
         courseRoomTimePreference.setTime(starttime);
         courseRoomTimePreference.setDay(day);
+        courseRoomTimePreference.setEndtime(endtime);
         return courseRoomTimePreferenceRepository.save(courseRoomTimePreference);
+    }
+
+    public List<Course> findNotFull() {
+        List<Course> needed = new ArrayList<>();
+        List<Course> courses = courseRepository.findAll();
+        for (Course course : courses) {
+            if (timetableRepository.existsByTeacherCourseId(course.getId())) {
+                List<TimeTable> allCourseTimes = timetableRepository.findByTeacherCourseId(course.getId());
+                int totalhours = 0;
+                for (TimeTable table : allCourseTimes) {
+                    LocalTime start = table.getStart();
+                    LocalTime end = table.getEnd();
+                    int hours = Duration.between(start, end).toHoursPart();
+                    totalhours += hours;
+                }
+                if (totalhours < course.getHoursPerWeek()) {
+                    needed.add(course);
+                }
+            } else {
+                needed.add(course);
+            }
+        }
+        return needed;
     }
 
 }

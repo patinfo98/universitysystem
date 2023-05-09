@@ -16,9 +16,6 @@
   <form id="form" th:action="@{/add/student/course/{id}(id=${id})}" method="post" style="max-width: 300px;">
     <div class="border border-secondary p-3 rounded">
       <p>Choose course</p>
-      <div id="popup" style="display:none;">
-        <p>There is an overlap between some of your courses!</p>
-      </div>
       <p>
         <select id="chosenCourse" class="form-control" name="course">
           <option value="">Select a course</option>

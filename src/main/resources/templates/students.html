@@ -60,7 +60,9 @@
                     <td th:text="${student.getLastName()}"></td>
                     <td th:text="${student.getStudentNumber()}"></td>
                     <td><a th:href="@{/edit/{id}(id=${student.getId()})}" class="btn btn-primary"><i class="fas fa-user-edit ml-2"></i></a></td>
-                    <td><a th:href="@{/delete/{id}(id=${student.getId()})}" class="btn btn-primary"><i class="fas fa-user-times ml-2"></i></a></td>
+                    <td><form action="#" th:action="@{/deleteconfirm/{id}(id=${student.getId()})}" method="post">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-user-times ml-2"></i></button>
+                    </form></td>
                     <td><a th:href="@{show/student/courses/{id}(id=${student.getId()})}" class="btn btn-primary"><i class="fas fa-list ml-2"></i></a></td>
 
                 </tr>

@@ -14,14 +14,6 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public Student saveStudent(Student student) {
-        return userRepository.save(student);
-    }
-
-
-    public Staff saveStaff(Staff staff) {
-        return userRepository.save(staff);
-    }
 
     public boolean loginValid(String email, String password) {
         if (userRepository.existsByEmail(email)) {
@@ -33,10 +25,6 @@ public class UserService {
 
     public User findById(int id) {
         return userRepository.findById(id);
-    }
-
-    public User findByEmail(String email) {
-        return userRepository.findByEmail(email);
     }
 
     public userType role(User user) {

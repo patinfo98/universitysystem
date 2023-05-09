@@ -26,4 +26,6 @@ public class    CourseRoomTimePreference {
     private days day;
     @Column(name="start_time")
     private LocalTime time;
+    @Column(name="end_time")
+    private LocalTime endtime;
 }

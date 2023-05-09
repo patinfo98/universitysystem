@@ -37,7 +37,7 @@
               </select>
             </p>
             <p>
-              <input type="time" min="08:00" name="time" id="time" th:attr="timeslot=${hoursperweek}" class="form-control" placeholder="start-time" required/>
+              <input type="time" min="08:00" step="3600" name="time" id="time" th:attr="timeslot=${hoursperweek}" class="form-control" placeholder="start-time" required/>
                 <script>
                     const timeSetter = document.getElementById("time");
                     const hoursPerWeek = parseInt(timeSetter.getAttribute("timeslot"));
@@ -47,6 +47,20 @@
                 </script>
             </p>
             <p>
+            <input type="time" min="" step="3600" name="time2" id="time2"  class="form-control" placeholder="end-time" required/>
+            </p>
+          <script>
+              const time1 = document.getElementById("time");
+              const time2 = document.getElementById("time2");
+
+              function updateTime2Max() {
+                  const start = parseInt(time1.value.split(":")[0]);
+                  const end = start + hoursPerWeek;
+                  time2.max = end.toString() + ":00";
+                  time2.min = time1.value;
+              }
+              time1.addEventListener("change", updateTime2Max);
+          </script>
               <input type="submit" value="post" class="btn btn-primary"/>
             </p>
 

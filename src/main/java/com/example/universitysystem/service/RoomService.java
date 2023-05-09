@@ -4,6 +4,7 @@ import com.example.universitysystem.model.Room;
 import com.example.universitysystem.repository.CourseRoomTimePreferenceRepository;
 import com.example.universitysystem.repository.RoomRepository;
 import com.example.universitysystem.repository.TimetableRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,11 +21,7 @@ public class RoomService {
         this.courseRoomTimePreferenceRepository = courseRoomTimePreferenceRepository;
         this.timetableRepository = timetableRepository;
     }
-
-    public Room add(Room room) {
-        return roomRepository.save(room);
-    }
-
+    @Transactional
     public void delete(Room room) {
         courseRoomTimePreferenceRepository.deleteByRoom(room);
         timetableRepository.deleteByRoom(room);
@@ -36,14 +33,6 @@ public class RoomService {
         roomOld.setBuilding(roomNew.getBuilding());
         roomOld.setSeats(roomNew.getSeats());
         return roomRepository.save(roomOld);
-    }
-
-    public List<Room> findAll() {
-        return roomRepository.findAll();
-    }
-
-    public Room findById(int id) {
-        return roomRepository.findById(id);
     }
 
 }

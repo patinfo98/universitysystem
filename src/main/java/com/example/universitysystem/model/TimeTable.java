@@ -5,6 +5,12 @@ import lombok.Data;
 
 import java.time.LocalTime;
 
+@NamedQuery(name="overlapEntries", query = "SELECT t " +
+                "FROM TimeTable t " +
+                "WHERE t.start < :end " +
+                "AND t.end > :start " +
+                "AND t.day = :day"
+)
 @Data
 @Entity
 @Table(name = "teacher_course_time_room")

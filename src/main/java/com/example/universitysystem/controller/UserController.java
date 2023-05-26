@@ -3,6 +3,7 @@ package com.example.universitysystem.controller;
 import com.example.universitysystem.model.*;
 import com.example.universitysystem.repository.*;
 import com.example.universitysystem.service.*;
+import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -10,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.sql.Time;
 import java.time.LocalTime;
 import java.util.Collections;
 import java.util.Comparator;
@@ -19,6 +21,8 @@ import java.util.stream.Collectors;
 @Controller
 public class UserController {
 
+    @Autowired
+    private HttpSession session;
     private final StudentCourseRepository studentCourseRepository;
     private final UserService userService;
     private final RoomService roomService;
@@ -71,7 +75,7 @@ public class UserController {
 
     @PostMapping("/add")
     public String addStudent(@ModelAttribute("student") Student student) {
-        userRepository.save(student);
+        userService.save(student);
         return "redirect:/students";
     }
 
@@ -102,31 +106,47 @@ public class UserController {
 
     @GetMapping("add/student/course/{id}")
     public String addStudentCourse(@PathVariable("id") int id, Model model) {
+        boolean error1 = model.getAttribute("error") == null ? false : (boolean) model.getAttribute("error");
+        int selectedCourse = model.getAttribute("selectedCourseId") == null ? 1 : (int) model.getAttribute("selectedCourseId");
         List<Course> courses = courseRepository.findAll();
         List<Course> coursesStudent = studentCourseRepository.findAllByStudent((Student) userRepository.findById(id)).stream().map(StudentCourse::getTeacherCourse).collect(Collectors.toList());
         courses.removeAll(coursesStudent);
         model.addAttribute("courses", courses);
+        model.addAttribute("warning", "This course has an overlap with one of your other courses!");
+        model.addAttribute("error", error1);
+        model.addAttribute("selectedId", selectedCourse);
         return "add_student_courses";
     }
+    @PostMapping("add/student/course/{id}/anyway")
+    public String addCourseAnyway(@PathVariable("id") int id, @RequestParam("course") int courseId, Model model, RedirectAttributes redirectAttributes) {
+        studentCourseService.add((Student)userRepository.findById(id), courseRepository.findById(courseId));
+        boolean error = false;
+        redirectAttributes.addFlashAttribute("error", error);
+        return "redirect:/show/student/courses/{id}";
+    }
+
 
     @PostMapping("add/student/course/{id}")
     public String addCourse(@PathVariable("id") int id, @RequestParam("course") int courseId, Model model, RedirectAttributes redirectAttributes) {
         Student student = (Student) userRepository.findById(id);
         Course course = courseRepository.findById(courseId);
-        studentCourseService.add(student, course);
-        redirectAttributes.addAttribute("courseId", courseId);
-        return "redirect:/show/student/courses/{id}/{courseId}";
+//        needed
+        List<TimeTable> courseTimes = timetableRepository.findByTeacherCourse(courseRepository.findById(courseId));
+        List<Course> studentCourses = studentCourseRepository.findAllByStudent(student).stream().map(x -> x.getTeacherCourse()).collect(Collectors.toList());
+        List<TimeTable> studentTimes = timetableRepository.findByTeacherCourseIn(studentCourses);
+        boolean error = timeTableService.checkCourseOverlap(studentTimes, courseTimes);
+        if(error){
+            redirectAttributes.addFlashAttribute("error", error);
+            redirectAttributes.addFlashAttribute("selectedCourseId", courseId);
+            return "redirect:/add/student/course/{id}";
+                }
+        else {
+            studentCourseService.add(student, course);
+            redirectAttributes.addFlashAttribute("error", error);
+            return "redirect:/show/student/courses/{id}";
+        }
     }
 
-    @GetMapping("/show/student/courses/{id}/{courseId}")
-    public String showCoursesCheckWarning(@PathVariable("id") int id, @PathVariable("courseId") int courseid, Model model) {
-        List<StudentCourse> courses = studentCourseRepository.findAllByStudent((Student) userRepository.findById(id));
-        model.addAttribute("student", userRepository.findById(id).getLastName());
-        model.addAttribute("courses", courses);
-        model.addAttribute("overlap", studentCourseService.overlap(courseRepository.findById(courseid),(Student) userRepository.findById(id)));
-        model.addAttribute("courseId", courseid);
-        return "student_courses";
-    }
 
     @GetMapping("/show/student/courses/{id}")
     public String showCourses(@PathVariable("id") int id, Model model) {
@@ -155,6 +175,7 @@ public class UserController {
     @PostMapping("/add_teacher")
     public String addTeacher(@ModelAttribute("teacher") Staff staff, @ModelAttribute("role") Staff.role role) {
         staff.setRole(role);
+        staff.setFirstLogin(true);
         userRepository.save(staff);
         return "redirect:/teachers";
     }
@@ -292,11 +313,15 @@ public class UserController {
     }
 
     @GetMapping("courses/{id}/coursetimes")
-    public String courseTimes(@PathVariable("id") int id, Model model){
+    public String courseTimes(@PathVariable("id") int id, Model model) {
+        boolean error1 = model.getAttribute("error") == null ? false : (boolean) model.getAttribute("error");
         model.addAttribute("times", timetableRepository.findByTeacherCourseId(id));
         model.addAttribute("days", days.values());
         model.addAttribute("rooms", roomRepository.findAll());
-        model.addAttribute("hoursperweek", courseRepository.findById(id).getHoursPerWeek());
+        model.addAttribute("hoursperweek", timeTableService.timeLeft(courseRepository.findById(id)));
+        model.addAttribute("warning", "A course with this time/room combination already exists!");
+        model.addAttribute("error", error1);
+        System.out.println(error1);
         return "coursetimes";
     }
 
@@ -353,6 +378,7 @@ public class UserController {
     public String login(RedirectAttributes redirectAttributes, Model model, @RequestParam("email") String email, @RequestParam("password") String password) {
         if (userService.loginValid(email, password)) {
             User user = userRepository.findByEmail(email);
+            session.setAttribute("userId", user.getId());
             redirectAttributes.addAttribute("id", user.getId());
             role = userService.role(user);
             switch (role) {
@@ -374,7 +400,9 @@ public class UserController {
 
     @GetMapping("/plan/student/{id}")
     public String customTable(@PathVariable int id, Model model) {
-        List<TimeTable> table = timetableRepository.findByTeacherCourseIn(studentCourseRepository.findAllByStudent((Student) userRepository.findById(id)).stream().map(StudentCourse::getTeacherCourse).collect(Collectors.toList()));
+        User user = userRepository.findById(id);
+        int userid = (int)session.getAttribute("userId");
+        List<TimeTable> table = timetableRepository.findByTeacherCourseIn(studentCourseRepository.findAllByStudent((Student) userRepository.findById(userid)).stream().map(StudentCourse::getTeacherCourse).collect(Collectors.toList()));
         Collections.sort(table, Comparator.comparing(TimeTable::getDay).thenComparing(TimeTable::getStart));
         model.addAttribute("table", table);
         model.addAttribute("slot", new TimeTable());
@@ -385,6 +413,12 @@ public class UserController {
 
     @GetMapping("/plan/admin/{id}")
     public String teacherTable(@PathVariable int id, Model model) {
+        User user = userRepository.findById(id);
+        if(user.getFirstLogin()){
+            model.addAttribute("firstLogin", true);
+            user.setFirstLogin(false);
+            userRepository.save(user);
+        }
         List<TimeTable> table = timetableRepository.findAll();
         Collections.sort(table, Comparator.comparing(TimeTable::getDay).thenComparing(TimeTable::getStart));
         model.addAttribute("table", table);
@@ -396,6 +430,12 @@ public class UserController {
 
     @GetMapping("/plan/assistant/{id}")
     public String assistantTable(@PathVariable int id, Model model) {
+        User user = userRepository.findById(id);
+        if(user.getFirstLogin()){
+            model.addAttribute("firstLogin", true);
+            user.setFirstLogin(false);
+            userRepository.save(user);
+        }
         List<TimeTable> table = timeTableService.findByTeacherCourseStaff_Id(id);
         Collections.sort(table, Comparator.comparing(TimeTable::getDay).thenComparing(TimeTable::getStart));
         model.addAttribute("table", table);
@@ -405,16 +445,31 @@ public class UserController {
         return "plan";
     }
 
-    @PostMapping("/delete/times/{id}")
-    public String delete(@PathVariable("id") int id){
+    @PostMapping("/delete/times/{id}/{id2}")
+    public String delete(@PathVariable("id") int id, @PathVariable("id2") int id2){
         timetableRepository.deleteById(id);
-        return "redirect:/courses";
+        return "redirect:/courses/{id2}/coursetimes";
     }
 
     @PostMapping("/add/times/{id}")
-    public String addtimes(@PathVariable("id") int id, @RequestParam("time") LocalTime time, @RequestParam("room") int roomId, @RequestParam("day") days day, @RequestParam("time2") LocalTime time2) {
-        timeTableService.save(id, time, time2, roomRepository.findById(roomId), day);
-        return "redirect:/courses";
+    public String addtimes(@PathVariable("id") int id, @RequestParam("time") LocalTime time, @RequestParam("room") int roomId, @RequestParam("day") days day, @RequestParam("time2") LocalTime time2, RedirectAttributes redirectAttributes) {
+        List<TimeTable> timeOverlap = timeTableService.hasOverlap(time,time2, day);
+        List<Integer> roomOverlap = timeOverlap.stream().map(x -> x.getRoom().getId()).collect(Collectors.toList());
+        List<Course.fieldOfStudy> fieldOverlap = timeOverlap.stream().map(x -> x.getTeacherCourse().getField()).collect(Collectors.toList());
+        boolean error = false;
+        if(timeOverlap.isEmpty() || (!fieldOverlap.contains(courseRepository.findById(id).getField()) && !roomOverlap.contains(roomRepository.findById(roomId)))){
+            timeTableService.save(id, time, time2, roomRepository.findById(roomId), day);
+            redirectAttributes.addFlashAttribute("error", error);
+            return "redirect:/courses/{id}/coursetimes";
+        }
+        else {
+            error=true;
+            redirectAttributes.addFlashAttribute("error", error);
+            return "redirect:/courses/{id}/coursetimes";
+        }
+
+
+
     }
 
 

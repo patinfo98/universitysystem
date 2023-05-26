@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
 
 
-  <title>students</title>
+  <title>courses</title>
 </head>
 <body>
 <div class="container-fluid text-center d-flex align-items-center justify-content-center" >
@@ -35,11 +35,11 @@
           </select>
         </p>
         <p>
-          <input type="number" name="hours_per_week" min="0" max="8" step="0.5"  th:field="${course.hoursPerWeek}" class="form-control" placeholder="hours per week" required/>
+          <input type="number" placeholder="hours per week" name="hours_per_week" min="0" max="8" step="0.5"  th:field="${course.hoursPerWeek}" class="form-control" required/>
         </p>
         <p>
           <select class="form-control" name="type">
-            <option value="">Select a type</option>
+            <option value="">select coursetype</option>
             <option th:each="type:${types}"
                     th:value="${type}"
                     th:text="${type}">
@@ -48,7 +48,7 @@
         </p>
         <p>
           <select class="form-control" name="field">
-            <option value="">Select a type</option>
+            <option value="">select branch of study</option>
             <option th:each="field:${fields}"
                     th:value="${field}"
                     th:text="${field}">
@@ -88,15 +88,15 @@
         <td th:text="${course.getName()}"></td>
         <td th:text="${course.getHoursPerWeek()}"></td>
         <td th:text="${course.getType()}"></td>
-        <td th:if="${course.staff}" th:text="${course.getStaff().getLastName()}"></td>
+        <td th:text="${course.getStaff()?.getLastName() ?: 'NO TEACHER'}"></td>
         <td th:text="${course.getField()}"></td>
 
-        <td><a th:href="@{/edit/courses/{id}(id=${course.getId()})}" class="btn btn-primary"><i class="fas fa-user-edit ml-2"></i></a></td>
+        <td><a th:href="@{/edit/courses/{id}(id=${course.getId()})}" class="btn btn-primary"><i class="fas fa-edit ml-2"></i></a></td>
         <td><form action="#" th:action="@{/deleteconfirm/courses/{id}(id=${course.getId()})}" method="post">
-          <button type="submit" class="btn btn-primary"><i class="fas fa-user-times ml-2"></i></button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-times mx-2"></i></button>
         </form></td>
-        <td><a th:href="@{/courses/{id}/add_preferences(id=${course.getId()})}" class="btn btn-primary"><i class="fas fa-user-list ml-2"></i></a></td>
-        <td><a th:href="@{/courses/{id}/coursetimes(id=${course.getId()})}" class="btn btn-primary"><i class="fas fa-user-edit ml-2"></i></a></td>
+        <td><a th:href="@{/courses/{id}/add_preferences(id=${course.getId()})}" class="btn btn-primary"><i class="fas fa-plus mx-2"></i></a></td>
+        <td><a th:href="@{/courses/{id}/coursetimes(id=${course.getId()})}" class="btn btn-primary"><i class="fas fa-edit ml-2"></i></a></td>
 
       </tr>
       </tbody>

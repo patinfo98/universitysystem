@@ -5,6 +5,13 @@ import lombok.Data;
 
 import java.time.LocalTime;
 
+@NamedQuery(name="sameStudy", query="SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END " +
+        "FROM TimeTable t " +
+        "WHERE t.teacherCourse.field = :field " +
+        "AND t.end > :start " +
+        "AND t.day = :day")
+
+
 @Data
 @Entity
 @Table(name = "course")
@@ -35,8 +42,14 @@ public class Course {
     private fieldOfStudy field;
 
     @ManyToOne
-    @JoinColumn(name = "teacher_id")
+    @JoinColumn(name = "teacher_id", nullable = true)
     Staff staff;
+
+    @PreRemove
+    private void deleteTeacher() {
+        Staff teacher = new Staff();
+        teacher.setLastName("NO TEACHER");
+    }
 
 }
 

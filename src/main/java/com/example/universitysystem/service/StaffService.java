@@ -22,9 +22,13 @@ public class StaffService {
     }
 
     public void deleteById(int id) {
-        userRepository.deleteById(id);
+        List<Course> courses = courseRepository.findByStaffId(id);
+        for(Course course : courses){
+            course.setStaff(null);
+            courseRepository.save(course);
+        }
         staffRepository.deleteById(id);
-
+        userRepository.deleteById(id);
     }
 
 }

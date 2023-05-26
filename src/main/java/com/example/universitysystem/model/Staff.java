@@ -6,7 +6,6 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "teachers")
-@Inheritance(strategy = InheritanceType.JOINED)
 @PrimaryKeyJoinColumn(name="user_id")
 public class Staff extends User {
     public enum role {admin, assistant};

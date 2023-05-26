@@ -23,6 +23,11 @@ public class UserService {
         return false;
     }
 
+    public void save(User user){
+        user.setFirstLogin(false);
+        userRepository.save(user);
+    }
+
     public User findById(int id) {
         return userRepository.findById(id);
     }

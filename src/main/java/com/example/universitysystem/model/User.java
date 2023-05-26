@@ -14,6 +14,9 @@ public abstract class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @Column(name = "firstLogin", length = 20, nullable = false )
+    private Boolean firstLogin;
+
     @Column(name = "last_name", length = 20, nullable = false )
     private String lastName;
 

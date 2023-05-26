@@ -35,7 +35,7 @@
       <tr th:each="course : ${courses}">
         <td th:text="${course.getTeacherCourse().getName()}"></td>
         <td th:text="${course.getTeacherCourse().getDescription()}"></td>
-        <td th:text="${course.getTeacherCourse().getStaff().getLastName()}"></td>
+        <td th:text="${course.getTeacherCourse().getStaff()?.getLastName() ?: 'NO TEACHER'}"></td>
         <td th:text="${course.getTeacherCourse().getType()}"></td>
         <td th:text="${course.getTeacherCourse().getHoursPerWeek()}"></td>
         <td>

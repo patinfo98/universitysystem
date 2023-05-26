@@ -17,6 +17,9 @@
     <div class="container-fluid text-center d-flex align-items-center justify-content-center" >
 
         <div class="border border-secondary p-3 rounded my-5">
+            <div th:if="${firstLogin}" id="popup" style="display:none;" class="border border-secondary p-4 rounded">
+                    <p>One of your preferences was not considered!</p>
+            </div>
             <div th:if="${role == 'admin'}">
                     <p>
                 <a th:href="@{/students}" class="btn btn-primary">Edit Students</a>
@@ -30,11 +33,6 @@
             </div>
             <div th:if="${role == 'assistant'}">
                 <p><a th:href="@{/courses/assistant/{id}(id=${id})}" class="btn btn-primary">Edit Courses</a></p>
-            </div>
-            <div th:if="${role=='assistant' or role == 'admin'}">
-                <div  th:if="${preferenceNotUsed == true}" id="popup" style="display:none;" class="border border-secondary p-4 rounded">
-                    <p>One of your preferences was not considered!</p>
-                </div>
             </div>
             <div th:if="${role == 'student'}">
                 <p><a th:href="@{/show/student/courses/{id}(id=${id})}" class="btn btn-primary">Edit Courses</a></p>
@@ -57,7 +55,7 @@
                     <td id="time" th:text="${slot.getStart() + ' : ' + slot.getEnd()}"></td>
                     <td th:text="${slot.getTeacherCourse().getName()}"></td>
                     <td th:text="${slot.getRoom().getName()}"></td>
-                    <td th:text="${slot.getTeacherCourse().getStaff().getLastName()}"></td>
+                    <td th:text="${slot.getTeacherCourse().getStaff()?.getLastName() ?: 'NO TEACHER'}"></td>
                     <td th:text="${slot.getTeacherCourse().getType()}"></td>
                     <td th:text="${slot.getTeacherCourse().getField()}"></td>
 
@@ -68,7 +66,7 @@
     </div>
 </body>
 <script>
-    var doShow = [[${preferenceNotUsed}]];
+    var doShow = [[${firstLogin}]];
     if(doShow){
         showPopup()
     }

@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
 
 
-  <title>students</title>
+  <title>coursetimes</title>
 </head>
 <body>
 <div class="container-fluid text-center d-flex align-items-center justify-content-center" >
@@ -20,7 +20,7 @@
     <p><button id="btn" class="btn btn-primary" onclick="showPopup()">Add CourseTime</button> </p>
     <div id="popup" style="display:none;" class="border border-secondary p-4 rounded">
     <h2 class="my-2">Course Times</h2>
-    <form th:action="@{/add/times/{id}(id=${id})}"  method="post">
+    <form id="form" th:action="@{/add/times/{id}(id=${id})}"  method="post">
 
       <p>
         <select class="form-control" name="room" >
@@ -65,6 +65,9 @@
         }
         time1.addEventListener("change", updateTime2Max);
       </script>
+        <p th:if="${error}" class="alert alert-warning"  style="white-space: normal;" th:text="${warning}"></p>
+        <p th:if="${error==false}" class="empty-message"><br></p>
+      <p>
       <input type="submit" value="post" class="btn btn-primary"/>
       </p>
 
@@ -83,6 +86,7 @@
       <tr>
         <th>Day</th>
         <th>Time</th>
+        <th>Room</th>
         <th>Edit</th>
         <th>Delete</th>
       </tr>
@@ -91,9 +95,10 @@
       <tr th:each="time : ${times}">
         <td th:text="${time.getDay()}"></td>
         <td th:text="${time.getStart() + ' : ' + time.getEnd()}"></td>
-        <td><a th:href="@{/edit/time/{id}(id=${time.getId()})}" class="btn btn-primary"><i class="fas fa-user-edit ml-2"></i></a></td>
-        <td><form action="#" th:action="@{/delete/times/{id}(id=${time.getId()})}" method="post">
-          <button type="submit" class="btn btn-primary"><i class="fas fa-user-times ml-2"></i></button>
+        <td th:text="${time.getRoom().getName()}"></td>
+        <td><a th:href="@{/edit/time/{id}(id=${time.getId()})}" class="btn btn-primary"><i class="fas fa-edit ml-2"></i></a></td>
+        <td><form action="#" th:action="@{/delete/times/{id}/{id2}(id=${time.getId()},id2=${id})}" method="post">
+          <button type="submit" class="btn btn-primary"><i class="fas fa-times ml-2"></i></button>
         </form></td>
         </tr>
       </tbody>
@@ -106,7 +111,12 @@
 
 </body>
 <script>
-  function showPopup() {
+    var doShow = [[${error}]];
+    if(doShow) {
+      showPopup();
+    }
+
+    function showPopup() {
     var popup = document.getElementById("popup");
     popup.style.display="block";
     popup.class="container-fluid text-center d-flex align-items-center justify-content-center";
@@ -115,6 +125,7 @@
     popup.style.top="50%";
     popup.style.left="50%";
     popup.style.transform="translate(-50%, -50%)";
+    popup.style.width="250px"
     popup.style.background="white";
   }
   function closePopup(){

@@ -13,7 +13,7 @@
 </head>
 <body>
 <div class="container-fluid text-center d-flex align-items-center justify-content-center" style="height: 100vh">
-  <form id="form" th:action="@{/add/student/course/{id}(id=${id})}" method="post" style="max-width: 300px;">
+  <form id="form" th:if="${error==false}" th:action="@{/add/student/course/{id}(id=${id})}" method="post" style="max-width: 300px;">
     <div class="border border-secondary p-3 rounded">
       <p>Choose course</p>
       <p>
@@ -31,7 +31,41 @@
     </div>
 
   </form>
+  <form id="form2" th:object="${selectedId}" th:if="${error}" th:action="@{/add/student/course/{id}/anyway(id=${id})}" method="post" style="max-width: 300px;">
+    <div class="border border-secondary p-3 rounded">
+      <p>Choose course</p>
+      <p>
+        <select id="chosenCourse1" class="form-control" name="course">
+          <option value="">Select a course</option>
+          <option th:each="course:${courses}"
+                  th:value="${course.getId()}"
+                  th:text="${course.getName()}"
+                  th:selected="${course.getId() == selectedId}">
+          </option>
+        </select>
+      <p th:if="${error}" class="alert alert-warning"  style="white-space: normal;" th:text="${warning}"></p>
+      <p th:if="${error==false}" class="empty-message"><br></p>
+      <p>
+        <input type="submit" value="choose anyway" class="btn btn-primary" />
+      </p>
+      <p>
+        <input type="submit" value="cancel" class="btn btn-primary" onclick="goback()"/>
+      </p>
+
+    </div>
+
+  </form>
 </div>
 
 </body>
+<script>
+  function goback(){
+    event.preventDefault();
+    var id = [[${id}]];
+    var link = "/show/student/courses/" + id;
+    window.location.href = link;
+
+  }
+
+</script>
 </html>

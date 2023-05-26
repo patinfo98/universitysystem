@@ -30,7 +30,7 @@
             </p>
             <p>
               <select class="form-control" name="type">
-                <option value="">Select a type</option>
+                <option value="">select a coursetype</option>
                 <option th:each="type:${types}"
                         th:value="${type}"
                         th:text="${type}">
@@ -39,7 +39,7 @@
             </p>
           <p>
               <select class="form-control" name="field">
-                  <option value="">Select a type</option>
+                  <option value="">select a branch of study</option>
                   <option th:each="field:${fields}"
                           th:value="${field}"
                           th:text="${field}">

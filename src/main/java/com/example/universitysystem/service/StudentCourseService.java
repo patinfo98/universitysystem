@@ -32,22 +32,6 @@ public class StudentCourseService {
         return studentCourseRepository.save(studentCourse);
     }
 
-    public boolean overlap(Course course, Student student) {
-        List<TimeTable> courses = timetableRepository.findByTeacherCourseIn(studentCourseRepository.findAllByStudent(student).stream().map(StudentCourse::getTeacherCourse).collect(Collectors.toList()));
-        TimeTable courseTime = timetableRepository.findByTeacherCourse(course);
-        LocalTime start = courseTime.getStart();
-        LocalTime end = courseTime.getEnd();
-        for (TimeTable c : courses) {
-            LocalTime start2 = c.getStart();
-            LocalTime end2 = c.getEnd();
-
-            if ((((start.isBefore(start2) || start.equals(start2)) && end.isAfter(start2)) || ((start2.isBefore(start) || start.equals(start2)) && end2.isAfter(start)))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
 }
 
 

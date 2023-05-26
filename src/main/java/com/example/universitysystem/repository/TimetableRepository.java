@@ -4,6 +4,9 @@ import com.example.universitysystem.model.Course;
 import com.example.universitysystem.model.Room;
 import com.example.universitysystem.model.TimeTable;
 import com.example.universitysystem.model.days;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.sql.Time;
@@ -22,9 +25,13 @@ public interface TimetableRepository extends JpaRepository<TimeTable, Integer> {
 
     void deleteByTeacherCourseId(int id);
 
-    TimeTable findByTeacherCourse(Course course);
+    List<TimeTable> findByTeacherCourse(Course course);
+
+
 
     List<TimeTable> findByTeacherCourseId(int id);
+
+
 
 
 }

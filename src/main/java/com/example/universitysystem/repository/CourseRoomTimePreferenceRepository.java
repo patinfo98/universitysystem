@@ -16,4 +16,5 @@ public interface CourseRoomTimePreferenceRepository extends JpaRepository<Course
     void deleteByRoom(Room room);
 
     void deleteByCourseId(int id);
+
 }

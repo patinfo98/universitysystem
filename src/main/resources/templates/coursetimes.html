@@ -17,7 +17,7 @@
     no courstimes yet
   </div>
   <div th:unless="${times==null}" class="border border-secondary p-3 rounded my-5 ">
-    <p><button id="btn" class="btn btn-primary" onclick="showPopup()">Add CourseTime</button> </p>
+    <p><button id="btn" class="btn btn-dark" onclick="showPopup()">Add CourseTime</button> </p>
     <div id="popup" style="display:none;" class="border border-secondary p-4 rounded">
     <h2 class="my-2">Course Times</h2>
     <form id="form" th:action="@{/add/times/{id}(id=${id})}"  method="post">
@@ -68,7 +68,7 @@
         <p th:if="${error}" class="alert alert-warning"  style="white-space: normal;" th:text="${warning}"></p>
         <p th:if="${error==false}" class="empty-message"><br></p>
       <p>
-      <input type="submit" value="post" class="btn btn-primary"/>
+      <input type="submit" value="post" class="btn btn-dark"/>
       </p>
 
     </form>
@@ -96,9 +96,9 @@
         <td th:text="${time.getDay()}"></td>
         <td th:text="${time.getStart() + ' : ' + time.getEnd()}"></td>
         <td th:text="${time.getRoom().getName()}"></td>
-        <td><a th:href="@{/edit/time/{id}(id=${time.getId()})}" class="btn btn-primary"><i class="fas fa-edit ml-2"></i></a></td>
+        <td><a th:href="@{/edit/time/{id}(id=${time.getId()})}" class="btn btn-dark"><i class="fas fa-edit ml-2"></i></a></td>
         <td><form action="#" th:action="@{/delete/times/{id}/{id2}(id=${time.getId()},id2=${id})}" method="post">
-          <button type="submit" class="btn btn-primary"><i class="fas fa-times ml-2"></i></button>
+          <button type="submit" class="btn btn-dark"><i class="fas fa-times ml-2"></i></button>
         </form></td>
         </tr>
       </tbody>

@@ -12,13 +12,19 @@
     <title>students</title>
 </head>
 <body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="navbar-nav">
+            <a class="nav-item nav-link" href="/plan/admin">CoursePlan</a>
+            <a class="nav-item nav-link active" href="/students">Students</a>
+            <a class="nav-item nav-link" href="/courses">Courses</a>
+            <a class="nav-item nav-link " href="/rooms">Rooms</a>
+        </div>
+    </div>
+</nav>
 <div class="container-fluid text-center d-flex align-items-center justify-content-center"  >
     <div class="border border-secondary p-3 rounded my-5">
-        <div class="d-flex justify-content-start">
-            <button class="btn btn-primary" onclick="back()"><i class="fas fa-arrow-left mx-2"></i></button>
-        </div>
-        <h2 class="mt-2 mb-4">Students</h2>
-        <p><button id="btn" class="btn btn-primary" onclick="showPopup()">Add students</button> </p>
+        <h2 class="my-2">Students</h2>
+        <p><button id="btn" class="btn btn-dark" onclick="showPopup()">Add students</button> </p>
             <div id="popup" style="display:none;" class="border border-secondary p-4 rounded">
                 <h2 class="mb-5">Edit Student</h2>
                 <form action="#" th:action="@{/add}" method="post" th:object="${student}">
@@ -38,7 +44,7 @@
                         <input type="number" max="99999999" min="01000000" name="studentNumber" th:field="${student.studentNumber}" class="form-control" placeholder="student_number" required/>
                     </p>
                     <p>
-                        <input type="submit" value="post" class="btn btn-primary"/>
+                        <input type="submit" value="post" class="btn btn-dark"/>
                     </p>
 
 
@@ -62,11 +68,11 @@
                     <td th:text="${student.getFirstName()}"></td>
                     <td th:text="${student.getLastName()}"></td>
                     <td th:text="${student.getStudentNumber()}"></td>
-                    <td><a th:href="@{/edit/{id}(id=${student.getId()})}" class="btn btn-primary"><i class="fas fa-user-edit ml-2"></i></a></td>
+                    <td><a th:href="@{/edit/{id}(id=${student.getId()})}" class="btn btn-dark"><i class="fas fa-user-edit ml-2"></i></a></td>
                     <td><form action="#" th:action="@{/deleteconfirm/{id}(id=${student.getId()})}" method="post">
-                        <button type="submit" class="btn btn-primary"><i class="fas fa-user-times ml-2"></i></button>
+                        <button type="submit" class="btn btn-dark"><i class="fas fa-user-times ml-2"></i></button>
                     </form></td>
-                    <td><a th:href="@{show/student/courses/{id}(id=${student.getId()})}" class="btn btn-primary"><i class="fas fa-list ml-2"></i></a></td>
+                    <td><a th:href="@{show/student/courses/{id}(id=${student.getId()})}" class="btn btn-dark"><i class="fas fa-list ml-2"></i></a></td>
 
                 </tr>
             </tbody>
@@ -102,12 +108,5 @@
         }
 
     }
-
-    function back(){
-    var id = [[${id}]];
-    var link = "/show/student/courses/" + id;
-    window.location.href = link;
-    }
-
 </script>
 </html>

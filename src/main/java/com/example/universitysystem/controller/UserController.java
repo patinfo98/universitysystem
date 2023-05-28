@@ -5,6 +5,7 @@ import com.example.universitysystem.repository.*;
 import com.example.universitysystem.service.*;
 import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
+import org.hibernate.usertype.UserType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -60,17 +61,38 @@ public class UserController {
         this.courseRoomTimePreferenceRepository = courseRoomTimePreferenceRepository;
     }
 
+    private int sessionId(){
+        return (int)session.getAttribute("userId");
+    }
+
+    private boolean accessAllowed(UserService.userType role){
+        if(session.getAttribute("userId")!= null && userService.role(userService.findById(sessionId())).equals(role)) {
+            return true;
+        }
+        return false;
+        }
+
+     private boolean isSelf (UserService.userType role, int id){
+         return (accessAllowed(role) && sessionId()==id);
+     }
+
     @GetMapping("/students")
     public String adminFunctions(Model model, Student student) {
-        model.addAttribute("students", studentRepository.findAll());
-        model.addAttribute("student", student);
-        return "students";
+        if(accessAllowed(UserService.userType.admin)){
+            model.addAttribute("students", studentRepository.findAll());
+            model.addAttribute("student", student);
+            return "students";
+        }
+        return "errorPage";
     }
 
     @GetMapping("/add_students")
     public String showAddStudent(Student student, Model model) {
-        model.addAttribute("student", student);
-        return "add_students";
+        if(accessAllowed(UserService.userType.admin)) {
+            model.addAttribute("student", student);
+            return "add_students";
+        }
+        return "errorPage";
     }
 
     @PostMapping("/add")
@@ -81,9 +103,12 @@ public class UserController {
 
     @GetMapping("/edit/{id}")
     public String studentUpdateForm(@PathVariable("id") int id, Model model) {
-        Student student = (Student) userRepository.findById(id);
-        model.addAttribute("student", student);
-        return "update_students";
+        if(accessAllowed(UserService.userType.admin)) {
+            Student student = (Student) userRepository.findById(id);
+            model.addAttribute("student", student);
+            return "update_students";
+        }
+        return "errorPage";
     }
 
     @PostMapping("/update/students/{id}")
@@ -106,16 +131,19 @@ public class UserController {
 
     @GetMapping("add/student/course/{id}")
     public String addStudentCourse(@PathVariable("id") int id, Model model) {
-        boolean error1 = model.getAttribute("error") == null ? false : (boolean) model.getAttribute("error");
-        int selectedCourse = model.getAttribute("selectedCourseId") == null ? 1 : (int) model.getAttribute("selectedCourseId");
-        List<Course> courses = courseRepository.findAll();
-        List<Course> coursesStudent = studentCourseRepository.findAllByStudent((Student) userRepository.findById(id)).stream().map(StudentCourse::getTeacherCourse).collect(Collectors.toList());
-        courses.removeAll(coursesStudent);
-        model.addAttribute("courses", courses);
-        model.addAttribute("warning", "This course has an overlap with one of your other courses!");
-        model.addAttribute("error", error1);
-        model.addAttribute("selectedId", selectedCourse);
-        return "add_student_courses";
+        if(accessAllowed(UserService.userType.admin) || isSelf(UserService.userType.student, id)) {
+            boolean error1 = model.getAttribute("error") == null ? false : (boolean) model.getAttribute("error");
+            int selectedCourse = model.getAttribute("selectedCourseId") == null ? 1 : (int) model.getAttribute("selectedCourseId");
+            List<Course> courses = courseRepository.findAll();
+            List<Course> coursesStudent = studentCourseRepository.findAllByStudent((Student) userRepository.findById(id)).stream().map(StudentCourse::getTeacherCourse).collect(Collectors.toList());
+            courses.removeAll(coursesStudent);
+            model.addAttribute("courses", courses);
+            model.addAttribute("warning", "This course has an overlap with one of your other courses!");
+            model.addAttribute("error", error1);
+            model.addAttribute("selectedId", selectedCourse);
+            return "add_student_courses";
+        }
+        return "errorPage";
     }
     @PostMapping("add/student/course/{id}/anyway")
     public String addCourseAnyway(@PathVariable("id") int id, @RequestParam("course") int courseId, Model model, RedirectAttributes redirectAttributes) {
@@ -130,7 +158,6 @@ public class UserController {
     public String addCourse(@PathVariable("id") int id, @RequestParam("course") int courseId, Model model, RedirectAttributes redirectAttributes) {
         Student student = (Student) userRepository.findById(id);
         Course course = courseRepository.findById(courseId);
-//        needed
         List<TimeTable> courseTimes = timetableRepository.findByTeacherCourse(courseRepository.findById(courseId));
         List<Course> studentCourses = studentCourseRepository.findAllByStudent(student).stream().map(x -> x.getTeacherCourse()).collect(Collectors.toList());
         List<TimeTable> studentTimes = timetableRepository.findByTeacherCourseIn(studentCourses);
@@ -150,10 +177,15 @@ public class UserController {
 
     @GetMapping("/show/student/courses/{id}")
     public String showCourses(@PathVariable("id") int id, Model model) {
-        List<StudentCourse> courses = studentCourseRepository.findAllByStudent((Student) userRepository.findById(id));
-        model.addAttribute("student", userRepository.findById(id).getLastName());
-        model.addAttribute("courses", courses);
-        return "student_courses";
+        UserService.userType userrole = userService.role(userService.findById(sessionId()));
+        if(accessAllowed(UserService.userType.admin) || isSelf(UserService.userType.student, id)) {
+            List<StudentCourse> courses = studentCourseRepository.findAllByStudent((Student) userRepository.findById(id));
+            model.addAttribute("student", userRepository.findById(id).getLastName());
+            model.addAttribute("courses", courses);
+            model.addAttribute("role", userrole);
+            return "student_courses";
+        }
+        return "errorPage";
     }
 
     @PostMapping("/delete/student/courses/{id}/{studentid}")
@@ -166,10 +198,13 @@ public class UserController {
 
     @GetMapping("/teachers")
     public String teacherDisplay(Model model, Staff staff) {
-        model.addAttribute("staffs", staffRepository.findAll());
-        model.addAttribute("roles", Staff.role.values());
-        model.addAttribute("staff", staff);
-        return "teachers";
+        if(accessAllowed(UserService.userType.admin)) {
+            model.addAttribute("staffs", staffRepository.findAll());
+            model.addAttribute("roles", Staff.role.values());
+            model.addAttribute("staff", staff);
+            return "teachers";
+        }
+        return "errorPage";
     }
 
     @PostMapping("/add_teacher")
@@ -182,11 +217,14 @@ public class UserController {
 
     @GetMapping("/edit/teachers/{id}")
     public String teacherUpdateForm(@PathVariable("id") int id, Model model) {
-        Staff staff = (Staff) userRepository.findById(id);
-        model.addAttribute("staff", staff);
-        model.addAttribute("staff", staff);
-        model.addAttribute("roles", Staff.role.values());
-        return "update_staff";
+        if(accessAllowed(UserService.userType.admin)) {
+            Staff staff = (Staff) userRepository.findById(id);
+            model.addAttribute("staff", staff);
+            model.addAttribute("staff", staff);
+            model.addAttribute("roles", Staff.role.values());
+            return "update_staff";
+        }
+        return "errorPage";
     }
 
     @PostMapping("/update/teachers/{id}")
@@ -209,36 +247,45 @@ public class UserController {
 
     @GetMapping("/show/teachers/courses/{id}")
     public String showTeachersCourses(@PathVariable("id") int id, Model model) {
-        List<Course> courses = courseRepository.findByStaff((Staff) userRepository.findById(id));
-        model.addAttribute("courses", courses);
-        model.addAttribute("teacher", userRepository.findById(id).getLastName());
-        return "teacher_courses";
+        if(accessAllowed(UserService.userType.admin)) {
+            List<Course> courses = courseRepository.findByStaff((Staff) userRepository.findById(id));
+            model.addAttribute("courses", courses);
+            model.addAttribute("teacher", userRepository.findById(id).getLastName());
+            return "teacher_courses";
+        }
+        return "errorPage";
     }
 
-    @PostMapping("/createTable/{id}")
-    public String createTable(@PathVariable("id") int id) {
+    @PostMapping("/createTable")
+    public String createTable() {
         timeTableService.createTimeTable();
-        return "redirect:/plan/admin/{id}";
+        return "redirect:/plan/admin";
     }
 
 
     @GetMapping("/courses")
     public String adminFunctions(Model model, Course course) {
+        if(accessAllowed(UserService.userType.admin)){
         model.addAttribute("courses", courseRepository.findAll());
         model.addAttribute(timeTableService);
         model.addAttribute("course", course);
         model.addAttribute("teachers", staffRepository.findAll().stream().map(Staff::getLastName));
         model.addAttribute("types", Course.types.values());
         model.addAttribute("fields", Course.fieldOfStudy.values());
-        return "courses";
+        model.addAttribute("role", UserService.userType.admin);
+        return "courses";}
+        else if(accessAllowed(UserService.userType.assistant)){
+            model.addAttribute("courses", courseRepository.findByStaffId(sessionId()));
+            model.addAttribute(timeTableService);
+            model.addAttribute("course", course);
+            model.addAttribute("teachers", staffRepository.findAll().stream().map(Staff::getLastName));
+            model.addAttribute("types", Course.types.values());
+            model.addAttribute("fields", Course.fieldOfStudy.values());
+            model.addAttribute("role", UserService.userType.assistant);
+            return "courses";
+        }
+        return "errorPage";
     }
-
-    @GetMapping("/courses/assistant/{id}")
-    public String assistantCourses(Model model, @PathVariable("id") int id) {
-        model.addAttribute("courses", courseRepository.findByStaff((Staff) userRepository.findById(id)));
-        return "courses";
-    }
-
 
     @PostMapping("/add/course")
     public String addCourse(@ModelAttribute("course") Course course, @RequestParam("teacher") String name, @RequestParam("type") Course.types type, @RequestParam("field") Course.fieldOfStudy field) {
@@ -253,11 +300,15 @@ public class UserController {
     @GetMapping("/edit/courses/{id}")
     public String courseUpdateForm(@PathVariable("id") int id, Model model) {
         Course course = courseRepository.findById(id);
-        model.addAttribute("teachers", staffRepository.findAll().stream().map(Staff::getLastName));
-        model.addAttribute("types", Course.types.values());
-        model.addAttribute("course", course);
-        model.addAttribute("fields", Course.fieldOfStudy.values());
-        return "update_courses";
+        if(accessAllowed(UserService.userType.admin) || isSelf(UserService.userType.assistant, course.getStaff().getId())){
+            model.addAttribute("teachers", staffRepository.findAll().stream().map(Staff::getLastName));
+            model.addAttribute("types", Course.types.values());
+            model.addAttribute("course", course);
+            model.addAttribute("fields", Course.fieldOfStudy.values());
+            return "update_courses";
+        }
+        return "errorPage";
+
     }
 
     @PostMapping("/update/courses/{id}")
@@ -274,13 +325,6 @@ public class UserController {
         return "redirect:/courses";
     }
 
-    @GetMapping("/delete/courses/{id}")
-    public String courseDeleteForm(@PathVariable("id") int id, Model model) {
-        Course course = courseRepository.findById(id);
-        model.addAttribute("course", course);
-        return "delete_courses";
-    }
-
     @Transactional
     @PostMapping("/deleteconfirm/courses/{id}")
     public String courseDelete(@PathVariable("id") int id) {
@@ -290,13 +334,16 @@ public class UserController {
 
     @GetMapping("/courses/{id}/add_preferences")
     public String showAddPreferences(@PathVariable("id") int id, Model model) {
-        model.addAttribute("days", days.values());
-        model.addAttribute("rooms", roomRepository.findAll());
-        model.addAttribute("hoursperweek", courseRepository.findById(id).getHoursPerWeek());
-
-
-        return "add_preferences";
+        if (accessAllowed(UserService.userType.admin) || isSelf(UserService.userType.assistant, courseRepository.findById(id).getStaff().getId())) {
+            model.addAttribute("days", days.values());
+            model.addAttribute("rooms", roomRepository.findAll());
+            model.addAttribute("hoursperweek", courseRepository.findById(id).getHoursPerWeek());
+            return "add_preferences";
+        }
+        else return "errorPage";
     }
+
+
 
     @PostMapping("/add/preference/{id}")
     public String addPreferences(@PathVariable("id") int id, @RequestParam("time") LocalTime time, @RequestParam("room") int roomId, @RequestParam("day") days day, @RequestParam("time2") LocalTime time2) {
@@ -306,23 +353,29 @@ public class UserController {
 
     @GetMapping("/courses/{id}/add_times")
     public String changeTime(@PathVariable("id") int id, Model model) {
-        model.addAttribute("days", days.values());
-        model.addAttribute("rooms", roomRepository.findAll());
-        model.addAttribute("hoursperweek", courseRepository.findById(id).getHoursPerWeek());
-        return "edit_timetable";
+        if (accessAllowed(UserService.userType.admin) || isSelf(UserService.userType.assistant, courseRepository.findById(id).getStaff().getId())) {
+            model.addAttribute("days", days.values());
+            model.addAttribute("rooms", roomRepository.findAll());
+            model.addAttribute("hoursperweek", courseRepository.findById(id).getHoursPerWeek());
+            return "edit_timetable";
+        }
+        return "errorPage";
     }
 
     @GetMapping("courses/{id}/coursetimes")
     public String courseTimes(@PathVariable("id") int id, Model model) {
-        boolean error1 = model.getAttribute("error") == null ? false : (boolean) model.getAttribute("error");
-        model.addAttribute("times", timetableRepository.findByTeacherCourseId(id));
-        model.addAttribute("days", days.values());
-        model.addAttribute("rooms", roomRepository.findAll());
-        model.addAttribute("hoursperweek", timeTableService.timeLeft(courseRepository.findById(id)));
-        model.addAttribute("warning", "A course with this time/room combination already exists!");
-        model.addAttribute("error", error1);
-        System.out.println(error1);
-        return "coursetimes";
+        if(accessAllowed(UserService.userType.admin)) {
+            boolean error1 = model.getAttribute("error") == null ? false : (boolean) model.getAttribute("error");
+            model.addAttribute("times", timetableRepository.findByTeacherCourseId(id));
+            model.addAttribute("days", days.values());
+            model.addAttribute("rooms", roomRepository.findAll());
+            model.addAttribute("hoursperweek", timeTableService.timeLeft(courseRepository.findById(id)));
+            model.addAttribute("warning", "A course with this time/room combination already exists!");
+            model.addAttribute("error", error1);
+            System.out.println(error1);
+            return "coursetimes";
+        }
+        return "errorPage";
     }
 
     @PostMapping("/edit/timetable/{id}")
@@ -338,9 +391,12 @@ public class UserController {
 
     @GetMapping("/rooms")
     public String showRooms(Model model, Room room) {
-        model.addAttribute("rooms", roomRepository.findAll());
-        model.addAttribute("room", room);
-        return "rooms";
+        if(accessAllowed(UserService.userType.admin)) {
+            model.addAttribute("rooms", roomRepository.findAll());
+            model.addAttribute("room", room);
+            return "rooms";
+        }
+        return "errorPage";
     }
 
     @PostMapping("/add/room")
@@ -351,8 +407,11 @@ public class UserController {
 
     @GetMapping("/edit/rooms/{id}")
     public String showUpdateRoom(@PathVariable("id") int id, Model model) {
-        model.addAttribute("room", roomRepository.findById(id));
-        return "update_room";
+        if(accessAllowed(UserService.userType.admin)) {
+            model.addAttribute("room", roomRepository.findById(id));
+            return "update_room";
+        }
+        return "errorPage";
     }
 
     @PostMapping("/update/room/{id}")
@@ -383,11 +442,11 @@ public class UserController {
             role = userService.role(user);
             switch (role) {
                 case admin:
-                    return "redirect:/plan/admin/{id}";
+                    return "redirect:/plan/admin";
                 case assistant:
-                    return "redirect:/plan/assistant/{id}";
+                    return "redirect:/plan/assistant";
                 case student:
-                    return "redirect:/plan/student/{id}";
+                    return "redirect:/plan/student";
                 default:
                     return "redirect:/";
             }
@@ -398,27 +457,31 @@ public class UserController {
         }
     }
 
-    @GetMapping("/plan/student/{id}")
-    public String customTable(@PathVariable int id, Model model) {
-        User user = userRepository.findById(id);
-        int userid = (int)session.getAttribute("userId");
-        List<TimeTable> table = timetableRepository.findByTeacherCourseIn(studentCourseRepository.findAllByStudent((Student) userRepository.findById(userid)).stream().map(StudentCourse::getTeacherCourse).collect(Collectors.toList()));
-        Collections.sort(table, Comparator.comparing(TimeTable::getDay).thenComparing(TimeTable::getStart));
-        model.addAttribute("table", table);
-        model.addAttribute("slot", new TimeTable());
-        model.addAttribute("role", "student");
-        return "plan";
-        //for assistants and admins implement  too
+    @GetMapping("/plan/student")
+    public String customTable(Model model) {
+        if(accessAllowed(UserService.userType.student)) {
+            int userid = (int) session.getAttribute("userId");
+            List<TimeTable> table = timetableRepository.findByTeacherCourseIn(studentCourseRepository.findAllByStudent((Student) userRepository.findById(userid)).stream().map(StudentCourse::getTeacherCourse).collect(Collectors.toList()));
+            Collections.sort(table, Comparator.comparing(TimeTable::getDay).thenComparing(TimeTable::getStart));
+            model.addAttribute("table", table);
+            model.addAttribute("slot", new TimeTable());
+            model.addAttribute("role", "student");
+            model.addAttribute("id", userid);
+            return "plan";
+        }
+        return "errorPage";
     }
 
-    @GetMapping("/plan/admin/{id}")
-    public String teacherTable(@PathVariable int id, Model model) {
-        User user = userRepository.findById(id);
-        if(user.getFirstLogin()){
-            model.addAttribute("firstLogin", true);
-            user.setFirstLogin(false);
-            userRepository.save(user);
-        }
+    @GetMapping("/plan/admin")
+    public String teacherTable(Model model) {
+        if(accessAllowed(UserService.userType.admin)){
+            int id = sessionId();
+            User user = userRepository.findById(id);
+            if(user.getFirstLogin()){
+                model.addAttribute("firstLogin", true);
+                user.setFirstLogin(false);
+                userRepository.save(user);
+            }
         List<TimeTable> table = timetableRepository.findAll();
         Collections.sort(table, Comparator.comparing(TimeTable::getDay).thenComparing(TimeTable::getStart));
         model.addAttribute("table", table);
@@ -426,23 +489,29 @@ public class UserController {
         model.addAttribute("role", "admin");
         model.addAttribute("preferenceNotUsed", preferenceNotUsed(id));
         return "plan";
+        }
+        return "errorPage";
     }
 
-    @GetMapping("/plan/assistant/{id}")
-    public String assistantTable(@PathVariable int id, Model model) {
-        User user = userRepository.findById(id);
-        if(user.getFirstLogin()){
-            model.addAttribute("firstLogin", true);
-            user.setFirstLogin(false);
-            userRepository.save(user);
+    @GetMapping("/plan/assistant")
+    public String assistantTable(Model model) {
+        if(accessAllowed(UserService.userType.assistant)) {
+            int id = sessionId();
+            User user = userRepository.findById(id);
+            if (user.getFirstLogin()) {
+                model.addAttribute("firstLogin", true);
+                user.setFirstLogin(false);
+                userRepository.save(user);
+            }
+            List<TimeTable> table = timeTableService.findByTeacherCourseStaff_Id(id);
+            Collections.sort(table, Comparator.comparing(TimeTable::getDay).thenComparing(TimeTable::getStart));
+            model.addAttribute("table", table);
+            model.addAttribute("slot", new TimeTable());
+            model.addAttribute("role", "assistant");
+            model.addAttribute("preferenceNotUsed", preferenceNotUsed(id));
+            return "plan";
         }
-        List<TimeTable> table = timeTableService.findByTeacherCourseStaff_Id(id);
-        Collections.sort(table, Comparator.comparing(TimeTable::getDay).thenComparing(TimeTable::getStart));
-        model.addAttribute("table", table);
-        model.addAttribute("slot", new TimeTable());
-        model.addAttribute("role", "assistant");
-        model.addAttribute("preferenceNotUsed", preferenceNotUsed(id));
-        return "plan";
+        return "errorPage";
     }
 
     @PostMapping("/delete/times/{id}/{id2}")

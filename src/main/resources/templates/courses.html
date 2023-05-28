@@ -12,13 +12,22 @@
   <title>courses</title>
 </head>
 <body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <div class="navbar-nav">
+    <a class="nav-item nav-link" href="/plan/admin">CoursePlan</a>
+    <a class="nav-item nav-link" href="/students">Students</a>
+    <a class="nav-item nav-link active" href="/courses">Courses</a>
+    <a class="nav-item nav-link " href="/rooms">Rooms</a>
+  </div>
+  </div>
+</nav>
 <div class="container-fluid text-center d-flex align-items-center justify-content-center" >
   <div th:if="${courses==null}">
     no courses yet
   </div>
   <div th:unless="${courses==null}" class="border border-secondary p-3 rounded my-5 ">
       <h2 class="my-2">Courses</h2>
-    <p><button id="btn" class="btn btn-primary" onclick="showPopup()">Add course</button> </p>
+    <p><button id="btn" class="btn btn-dark" onclick="showPopup()">Add course</button> </p>
     <div id="popup" style="display:none;" class="border border-secondary p-4 rounded">
       <h2 class="mb-5">Add Course</h2>
       <form action="#" th:action="@{/add/course}" method="post" th:object="${course}">
@@ -59,7 +68,7 @@
           <input type="text" name="description" th:field="${course.description}" class="form-control" placeholder="description" required/>
         </p>
         <p>
-          <input type="submit" value="post" class="btn btn-primary"/>
+          <input type="submit" value="post" class="btn btn-dark"/>
         </p>
 
       </form>
@@ -79,7 +88,7 @@
         <th>Edit</th>
         <th>Delete</th>
         <th>add Preferences</th>
-        <th>set CourseTime</th>
+        <th th:if="${role == 'admin'}">set CourseTime</th>
         <th></th>
       </tr>
       </thead>
@@ -91,12 +100,12 @@
         <td th:text="${course.getStaff()?.getLastName() ?: 'NO TEACHER'}"></td>
         <td th:text="${course.getField()}"></td>
 
-        <td><a th:href="@{/edit/courses/{id}(id=${course.getId()})}" class="btn btn-primary"><i class="fas fa-edit ml-2"></i></a></td>
+        <td><a th:href="@{/edit/courses/{id}(id=${course.getId()})}" class="btn btn-dark"><i class="fas fa-edit ml-2"></i></a></td>
         <td><form action="#" th:action="@{/deleteconfirm/courses/{id}(id=${course.getId()})}" method="post">
-          <button type="submit" class="btn btn-primary"><i class="fas fa-times mx-2"></i></button>
+          <button type="submit" class="btn btn-dark"><i class="fas fa-times mx-2"></i></button>
         </form></td>
-        <td><a th:href="@{/courses/{id}/add_preferences(id=${course.getId()})}" class="btn btn-primary"><i class="fas fa-plus mx-2"></i></a></td>
-        <td><a th:href="@{/courses/{id}/coursetimes(id=${course.getId()})}" class="btn btn-primary"><i class="fas fa-edit ml-2"></i></a></td>
+        <td><a th:href="@{/courses/{id}/add_preferences(id=${course.getId()})}" class="btn btn-dark"><i class="fas fa-plus mx-2"></i></a></td>
+        <td th:if="${role == 'admin'}"><a th:href="@{/courses/{id}/coursetimes(id=${course.getId()})}" class="btn btn-dark"><i class="fas fa-edit ml-2"></i></a></td>
 
       </tr>
       </tbody>

@@ -3,7 +3,9 @@ package com.example.universitysystem.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Date;
 
 @NamedQuery(name="overlapEntries", query = "SELECT t " +
                 "FROM TimeTable t " +
@@ -29,6 +31,9 @@ public class TimeTable {
 
     @Column(name = "end_time")
     private LocalTime end;
+
+    @Column(name = "date")
+    private LocalDate date;
 
     @Column days day;
 

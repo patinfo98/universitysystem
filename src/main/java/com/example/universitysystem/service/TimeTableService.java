@@ -10,8 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 
 import java.sql.Time;
-import java.time.Duration;
-import java.time.LocalTime;
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -124,6 +123,29 @@ public class TimeTableService {
 
             }
         }
+        LocalDate date = LocalDate.of(2023, 5, 29);
+        int i = -1;
+        for (days day : days.values()) {
+            List<TimeTable> times = timetableRepository.findByDay(day);
+            i++;
+            for (TimeTable time : times) {
+                time.setDate(date.plusDays(i));
+                timetableRepository.save(time);
+
+
+                for (int j = 7; j < 22; j += 7) {
+                    TimeTable table = new TimeTable();
+                    table.setDate(date.plusDays(i + j));
+                    table.setDay(day);
+                    table.setRoom(time.getRoom());
+                    table.setStart(time.getStart());
+                    table.setEnd(time.getEnd());
+                    table.setTeacherCourse(time.getTeacherCourse());
+                    timetableRepository.save(table);
+                }
+
+            }
+        }
     }
 
 
@@ -147,7 +169,7 @@ public class TimeTableService {
     public boolean checkCourseOverlap(List<TimeTable> studentTimes, List<TimeTable> courseTimes) {
         for (TimeTable c1 : studentTimes) {
             for (TimeTable c2 : courseTimes) {
-                if (c1.getStart().isBefore(c2.getEnd()) && c1.getEnd().isAfter(c2.getStart())) {
+                if (c1.getStart().isBefore(c2.getEnd()) && c1.getEnd().isAfter(c2.getStart()) && c1.getDate().equals(c2.getDate())) {
                     boolean x = true;
                     System.out.println(x);
                     return true;
@@ -156,6 +178,26 @@ public class TimeTableService {
         }
         boolean x = false;
         System.out.println(x);
+        return false;
+    }
+
+    public boolean preferenceNotUsed(int id) {
+        List<CourseRoomTimePreference> preferences = courseRoomTimePreferenceRepository.findByCourse_Staff_Id(id);
+        List<TimeTable> actual = findByTeacherCourseStaff_Id(id);
+        if (!preferences.isEmpty() || preferences == null) {
+            for (TimeTable slot : actual) {
+                boolean in = false;
+                for (CourseRoomTimePreference preference : preferences) {
+                    if (slot.getStart().equals(preference.getTime()) && slot.getRoom().getId() == preference.getRoom().getId() && slot.getTeacherCourse().getId() == preference.getCourse().getId()) {
+                        in = true;
+                        break;
+                    }
+                }
+                if (!in) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 }

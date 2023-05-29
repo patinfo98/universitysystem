@@ -26,9 +26,7 @@ public interface TimetableRepository extends JpaRepository<TimeTable, Integer> {
     void deleteByTeacherCourseId(int id);
 
     List<TimeTable> findByTeacherCourse(Course course);
-
-
-
+    TimeTable findById(int id);
     List<TimeTable> findByTeacherCourseId(int id);
 
 

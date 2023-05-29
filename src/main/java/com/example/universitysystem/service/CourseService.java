@@ -26,6 +26,24 @@ public class CourseService {
         this.timetableRepository = timetableRepository;
     }
 
+    public void updateCourse(int id, Course updateCourse, Course.types type, Course.fieldOfStudy field, Staff teacher){
+        Course oldCourse = courseRepository.findById(id);
+        oldCourse.setName(updateCourse.getName());
+        oldCourse.setDescription(updateCourse.getDescription());
+        oldCourse.setStaff(teacher);
+        oldCourse.setHoursPerWeek(updateCourse.getHoursPerWeek());
+        oldCourse.setType(type);
+        oldCourse.setField(field);
+        courseRepository.save(oldCourse);
+    }
+
+    public List<Course> CoursesNotEnrolled(int id){
+        List<Course> courses = courseRepository.findAll();
+        List<Course> coursesStudent = studentCourseRepository.findAllByStudent((Student) userRepository.findById(id)).stream().map(StudentCourse::getTeacherCourse).toList();
+        courses.removeAll(coursesStudent);
+        return courses;
+    }
+
     public Course add(Course course, int teacherid) {
         Staff teacher = (Staff) userRepository.findById(teacherid);
         course.setStaff(teacher);

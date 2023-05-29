@@ -1,38 +1,40 @@
+/*
+ * TimeTableService
+ * methods in connection with the TimeTable objects
+ * Author:      Patrick Foessl
+ * Last Change: 29.05.2023
+ */
+
 package com.example.universitysystem.service;
 
 import com.example.universitysystem.model.*;
 import com.example.universitysystem.repository.*;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 
-import java.sql.Time;
-import java.time.*;
-import java.util.*;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class TimeTableService {
-    @PersistenceContext
-    private EntityManager entityManager;
-    private final RoomService roomService;
-    private final Random rand = new Random();
-    private final List<TimeTable> timeslots = new ArrayList<TimeTable>();
+
     private final TimetableRepository timetableRepository;
     private final CourseRoomTimePreferenceRepository courseRoomTimePreferenceRepository;
-
     private final UserRepository userRepository;
     private final RoomRepository roomRepository;
     private final CourseService courseService;
     private final CourseRepository courseRepository;
+    @PersistenceContext
+    private EntityManager entityManager;
 
-    public TimeTableService(TimetableRepository timetableRepository, CourseRoomTimePreferenceRepository courseRoomTimePreferenceRepository, RoomService roomService, CourseService courseService, RoomRepository roomRepository, CourseRepository courseRepository, UserRepository userRepository) {
+    public TimeTableService(TimetableRepository timetableRepository, CourseRoomTimePreferenceRepository courseRoomTimePreferenceRepository, CourseService courseService, RoomRepository roomRepository, CourseRepository courseRepository, UserRepository userRepository) {
         this.timetableRepository = timetableRepository;
         this.courseRoomTimePreferenceRepository = courseRoomTimePreferenceRepository;
-        this.roomService = roomService;
         this.courseService = courseService;
         this.roomRepository = roomRepository;
         this.courseRepository = courseRepository;
@@ -63,18 +65,28 @@ public class TimeTableService {
         timetableRepository.save(table);
     }
 
+    @Transactional
+    public void saveDateIncluded(int id, LocalTime start, LocalTime end, Room room, days day, LocalDate date) {
+        TimeTable table = new TimeTable();
+        table.setTeacherCourse(courseRepository.findById(id));
+        table.setDay(day);
+        table.setRoom(room);
+        table.setStart(start);
+        table.setEnd(end);
+        table.setDate(date);
+        timetableRepository.save(table);
+    }
+
     public boolean courseFull(CourseRoomTimePreference preference) {
         if (timetableRepository.existsByTeacherCourseId(preference.getCourse().getId())) {
             List<TimeTable> allCourseTimes = timetableRepository.findByTeacherCourseId(preference.getCourse().getId());
             List<Integer> courseTimes = allCourseTimes.stream().map(x -> Duration.between(x.getStart(), x.getEnd()).toHoursPart()).collect(Collectors.toList());
-            if (courseTimes.stream().mapToInt(Integer::intValue).sum() == courseRepository.findById(preference.getCourse().getId()).getHoursPerWeek()) {
-                return true;
-            }
+            return courseTimes.stream().mapToInt(Integer::intValue).sum() == courseRepository.findById(preference.getCourse().getId()).getHoursPerWeek();
         }
         return false;
     }
 
-    public void createTimeTable() {
+    public boolean createTimeTable() {
         userRepository.updateFirstLogin();
         timetableRepository.deleteAll();
         List<CourseRoomTimePreference> preferences = courseRoomTimePreferenceRepository.findAll();
@@ -98,29 +110,32 @@ public class TimeTableService {
                 }
             }
         }
-
-        for (days day : days.values()) {
-            List<Course> courses = courseService.findNotFull();
-            for (Course course : courses) {
-                for (int i = 8; i <= 12; i++) {
-                    LocalTime time = LocalTime.of(i, 0);
-                    List<TimeTable> overlapCourses = hasOverlap(time, timeLeft(course) > 2 ? time.plusHours(timeLeft(course) / 2) : time.plusHours(timeLeft(course)), day);
-                    if (overlapCourses.isEmpty()) {
-                        save(course.getId(), time, timeLeft(course) > 2 ? time.plusHours(timeLeft(course) / 2) : time.plusHours(timeLeft(course)), freeRoom(time, timeLeft(course) > 2 ? time.plusHours(timeLeft(course) / 2) : time.plusHours(timeLeft(course)), overlapCourses).get(0), day);
-                        break;
-                    } else {
-                        List<Course.fieldOfStudy> fields = overlapCourses.stream().map(x -> x.getTeacherCourse().getField()).collect(Collectors.toList());
-                        if (!fields.contains(course.getField())) {
-                            Room room;
-                            if (!freeRoom(time, time.plusHours(timeLeft(course)), overlapCourses).isEmpty()) {
-                                save(course.getId(), time, timeLeft(course) > 2 ? time.plusHours(timeLeft(course) / 2) : time.plusHours(timeLeft(course)), freeRoom(time, timeLeft(course) > 2 ? time.plusHours(timeLeft(course) / 2) : time.plusHours(timeLeft(course)), overlapCourses).get(0), day);
-                                break;
+        int k = 9;
+        for (int j = 0; j < 3; j++) {
+            k += 3;
+            for (days day : days.values()) {
+                List<Course> courses = courseService.findNotFull();
+                for (Course course : courses) {
+                    for (int i = 8; i <= k; i++) {
+                        LocalTime time = LocalTime.of(i, 0);
+                        int left = timeLeft(course);
+                        List<TimeTable> overlapCourses = hasOverlap(time, left > 2 ? time.plusHours(left / 2) : time.plusHours(left), day);
+                        if (overlapCourses.isEmpty()) {
+                            save(course.getId(), time, left > 2 ? time.plusHours(left / 2) : time.plusHours(left), freeRoom(time, left > 2 ? time.plusHours(left / 2) : time.plusHours(left), overlapCourses).get(0), day);
+                            break;
+                        } else {
+                            List<Course.fieldOfStudy> fields = overlapCourses.stream().map(x -> x.getTeacherCourse().getField()).collect(Collectors.toList());
+                            if (!fields.contains(course.getField())) {
+                                if (!freeRoom(time, left > 2 ? time.plusHours(left / 2) : time.plusHours(left), overlapCourses).isEmpty()) {
+                                    save(course.getId(), time, left > 2 ? time.plusHours(left / 2) : time.plusHours(left), freeRoom(time, left > 2 ? time.plusHours(left / 2) : time.plusHours(left), overlapCourses).get(0), day);
+                                    break;
+                                }
                             }
                         }
+
                     }
 
                 }
-
             }
         }
         LocalDate date = LocalDate.of(2023, 5, 29);
@@ -146,6 +161,7 @@ public class TimeTableService {
 
             }
         }
+        return courseService.findNotFull().isEmpty();
     }
 
 
@@ -160,10 +176,6 @@ public class TimeTableService {
         rooms.removeAll(table);
         return roomRepository.findAllById(rooms);
 
-    }
-
-    public boolean sameStudy(Course course) {
-        return (boolean) entityManager.createNamedQuery("sameStudy").setParameter("field", course.getField()).getSingleResult();
     }
 
     public boolean checkCourseOverlap(List<TimeTable> studentTimes, List<TimeTable> courseTimes) {
@@ -199,6 +211,15 @@ public class TimeTableService {
             }
         }
         return false;
+    }
+
+    public LocalTime[][] alltimes() {
+        LocalTime[][] allTimes = new LocalTime[15][2];
+        for (int i = 0; i < 15; i++) {
+            allTimes[i][0] = LocalTime.of(i + 8, 0);
+            allTimes[i][1] = LocalTime.of(i + 9, 0);
+        }
+        return allTimes;
     }
 }
 

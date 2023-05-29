@@ -16,9 +16,7 @@
 <body>
     <nav class="navbar navbar-expand navbar-light bg-light">
         <div class="navbar-nav">
-            <a th:if="${role == 'admin'}" class="nav-item nav-link active" href="/plan/admin">CoursePlan</a>
-            <a th:if="${role == 'assistant'}" class="nav-item nav-link active" href="/plan/assistant">CoursePlan</a>
-            <a th:if="${role == 'student'}" class="nav-item nav-link active" href="/plan/student">CoursePlan</a>
+            <a class="nav-item nav-link active" href="/plan">CoursePlan</a>
             <a th:if="${role == 'admin'}" class="nav-item nav-link" href="/students">Students</a>
             <a th:if="${role == 'admin'}" class="nav-item nav-link" href="/teachers">Teachers</a>
             <a th:href="@{/show/student/courses/{id}(id=${id})}" th:if="${role == 'student'}" class="nav-item nav-link" href="/courses">Courses</a>
@@ -28,11 +26,15 @@
     </nav>
     <div class="container-fluid text-center d-flex align-items-center justify-content-center" >
 
-        <div class="border border-secondary p-3 rounded my-5">
+        <div class="border border-secondary p-3 rounded my-5" style=" width: 90vw;">
             <h1>Course Plan</h1>
             <div id="popup" style="display:none;" class="border border-secondary p-4 rounded">
                     <p class="alert alert-danger">One of your preferences was not considered!</p>
             </div>
+            <div th:if="${valid!=null && !valid}" id="popup2" style="display:none;" class="border border-secondary p-4 rounded">
+                <p class="alert alert-danger">The Table was not created successfully, not all Courses were assigned!</p>
+            </div>
+
             <div th:if="${role == 'admin'}">
                     <p>
                     <form th:action="@{/createTable}"  method="post">
@@ -40,30 +42,22 @@
                     </form>
                 </p>
             </div>
-            <table  class="table table-striped">
+            <table  class="table-bordered table-striped table-responsive">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Day</th>
-                        <th>Time</th>
-                        <th>CourseName</th>
-                        <th>Room</th>
-                        <th>Teacher</th>
-                        <th>Type</th>
-                        <th>Field of Study</th>
+                        <th> </th>
+                        <th class="p-2" th:each="date : ${dates}">[[${date.getDayOfMonth() + '.' + date.getMonthValue() + '.'}]]</th>
                     </tr>
                 </thead>
                 <tbody>
-                <tr th:each="slot : ${table}">
-                    <td th:text="${slot.getDate()}"></td>
-                    <td th:text="${slot.getDay()}"></td>
-                    <td id="time" th:text="${slot.getStart() + ' : ' + slot.getEnd()}"></td>
-                    <td th:text="${slot.getTeacherCourse().getName()}"></td>
-                    <td th:text="${slot.getRoom().getName()}"></td>
-                    <td th:text="${slot.getTeacherCourse().getStaff()?.getLastName() ?: 'NO TEACHER'}"></td>
-                    <td th:text="${slot.getTeacherCourse().getType()}"></td>
-                    <td th:text="${slot.getTeacherCourse().getField()}"></td>
 
+                <tr th:each="time : ${times}">
+                    <td class="p-2 " th:text="${time[0] + ' - ' + time[1]}"></td>
+                    <td th:each="date : ${dates}">
+                        <p class="px-4 py-1" th:each="slot : ${table}" th:if="${slot.getStart() <= time[0] && slot.getEnd() > time[0] && slot.getDate().equals(date)}">
+                            [[${slot.getTeacherCourse().getName()}]]
+                        </p>
+                    </td>
                 </tr>
                 </tbody>
             </table>
@@ -74,10 +68,15 @@
     var doShow = [[${preferenceNotUsed}]];
     var once = [[${firstLogin}]];
     if(doShow && once){
-        showPopup()
+        showPopup("popup");
     }
-    function showPopup() {
-        var popup = document.getElementById("popup");
+    var success = [[${valid}]];
+    if(!success){
+        showPopup("popup2");
+    }
+
+    function showPopup(variable) {
+        var popup = document.getElementById(variable);
         popup.style.display="block";
         popup.class="container-fluid text-center d-flex align-items-center justify-content-center";
         popup.style.zIndex="9999";
@@ -87,20 +86,28 @@
         popup.style.transform="translate(-50%, -50%)";
         popup.style.background="white";
     }
-    function closePopup(){
-        var popup = document.getElementById("popup");
+    function closePopup(param){
+        var popup = document.getElementById(param);
         popup.style.display="none";
     }
     var popup = document.getElementById("popup");
     var btn = document.getElementById("btn");
     document.addEventListener("click", close);
+    var popup2 = document.getElementById("popup2");
+    document.addEventListener("click", close2);
+    function close2 (event){
+        if(event.target!=popup2 && !popup2.contains(event.target)){
+            closePopup("popup2");
+        }
+    }
 
 
     function close (event) {
         if(event.target!=popup && !popup.contains(event.target)){
-            closePopup();
+            closePopup("popup");
         }
-
     }
+
+
 </script>
 </html>

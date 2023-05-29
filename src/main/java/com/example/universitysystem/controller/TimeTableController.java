@@ -1,3 +1,10 @@
+/*
+ * TimeTable Controller
+ * methods in connection with the display of TimeTable objects
+ * Author:      Patrick Foessl
+ * Last Change: 29.05.2023
+ */
+
 package com.example.universitysystem.controller;
 
 import com.example.universitysystem.model.Course;
@@ -16,9 +23,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,8 +55,7 @@ public class TimeTableController {
             model.addAttribute("rooms", roomRepository.findAll());
             model.addAttribute("hoursperweek", courseRepository.findById(id).getHoursPerWeek());
             return "add_preferences";
-        }
-        else return "errorPage";
+        } else return "errorPage";
     }
 
     @PostMapping("/add/preference/{id}")
@@ -59,11 +65,10 @@ public class TimeTableController {
     }
 
 
-
     @GetMapping("courses/{id}/coursetimes")
     public String courseTimes(@PathVariable("id") int id, Model model) {
-        if(userService.accessAllowed(UserService.userType.admin)) {
-            boolean error1 = model.getAttribute("error") == null ? false : (boolean) model.getAttribute("error");
+        if (userService.accessAllowed(UserService.userType.admin)) {
+            boolean error1 = model.getAttribute("error") != null && (boolean) model.getAttribute("error");
             model.addAttribute("times", timetableRepository.findByTeacherCourseId(id));
             model.addAttribute("days", days.values());
             model.addAttribute("rooms", roomRepository.findAll());
@@ -77,44 +82,40 @@ public class TimeTableController {
     }
 
     @PostMapping("/delete/times/{id}/{id2}")
-    public String delete(@PathVariable("id") int id, @PathVariable("id2") int id2){
+    public String delete(@PathVariable("id") int id, @PathVariable("id2") int id2) {
         timetableRepository.deleteById(id);
         return "redirect:/courses/{id2}/coursetimes";
     }
 
     @PostMapping("/add/times/{id}")
     public String addtimes(@PathVariable("id") int id, @RequestParam("time") LocalTime time, @RequestParam("room") int roomId, @RequestParam("time2") LocalTime time2, @RequestParam("date") LocalDate date, RedirectAttributes redirectAttributes) {
-        List<TimeTable> timeOverlap = timeTableService.hasOverlap(time,time2, days.valueOf(date.getDayOfWeek().name().toLowerCase()));
-        timeOverlap.removeIf(timeEntry -> timeEntry.getDate().equals(date));
-        List<Integer> roomOverlap = timeOverlap.stream().map(x -> x.getRoom().getId()).collect(Collectors.toList());
-        List<Course.fieldOfStudy> fieldOverlap = timeOverlap.stream().map(x -> x.getTeacherCourse().getField()).collect(Collectors.toList());
+        List<TimeTable> timeOverlap = timeTableService.hasOverlap(time, time2, days.valueOf(date.getDayOfWeek().name().toLowerCase()));
+        List<TimeTable> realOverlap = new ArrayList<TimeTable>();
+        for(TimeTable i: timeOverlap){
+            if(i.getDate().isEqual(date)){
+                realOverlap.add(i);
+            }
+        }
+        List<Integer> roomOverlap = realOverlap.stream().filter(x -> x.getRoom().getId() == roomId).map(x->x.getRoom().getId()).collect(Collectors.toList());
+        List<Course.fieldOfStudy> fieldOverlap = realOverlap.stream().filter(x -> x.getTeacherCourse().getField() == courseRepository.findById(id).getField()).map(x -> x.getTeacherCourse().getField()).collect(Collectors.toList());
         boolean error = false;
-        if(timeOverlap.isEmpty() || (!fieldOverlap.contains(courseRepository.findById(id).getField()) && !roomOverlap.contains(roomRepository.findById(roomId)))){
-            TimeTable newTime = new TimeTable();
-            newTime.setStart(time);
-            newTime.setEnd(time2);
-            newTime.setRoom(roomRepository.findById(roomId));
-            newTime.setDay(days.valueOf(date.getDayOfWeek().name().toLowerCase()));
-            newTime.setDate(date);
-            newTime.setTeacherCourse(courseRepository.findById(id));
-            timetableRepository.save(newTime);
+        if (realOverlap.isEmpty() || (fieldOverlap.isEmpty() && roomOverlap.isEmpty())) {
+            timeTableService.saveDateIncluded(id, time, time2, roomRepository.findById(roomId), days.valueOf(date.getDayOfWeek().name().toLowerCase()), date);
+            redirectAttributes.addFlashAttribute("error", error);
+            return "redirect:/courses/{id}/coursetimes";
+        } else {
+            error = true;
             redirectAttributes.addFlashAttribute("error", error);
             return "redirect:/courses/{id}/coursetimes";
         }
-        else {
-            error=true;
-            redirectAttributes.addFlashAttribute("error", error);
-            return "redirect:/courses/{id}/coursetimes";
-        }
-
 
 
     }
 
     @PostMapping("/createTable")
-    public String createTable() {
-        timeTableService.createTimeTable();
-        return "redirect:/plan/admin";
+    public String createTable(RedirectAttributes redirectAttributes) {
+        redirectAttributes.addFlashAttribute("valid", timeTableService.createTimeTable());
+        return "redirect:/plan";
     }
 
 }

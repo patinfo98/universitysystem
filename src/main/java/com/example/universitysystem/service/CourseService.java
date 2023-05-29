@@ -1,3 +1,10 @@
+/*
+ * CourseService
+ * methods in connection to course objects
+ * Author:      Patrick Foessl
+ * Last Change: 29.05.2023
+ */
+
 package com.example.universitysystem.service;
 
 import com.example.universitysystem.model.*;
@@ -26,7 +33,7 @@ public class CourseService {
         this.timetableRepository = timetableRepository;
     }
 
-    public void updateCourse(int id, Course updateCourse, Course.types type, Course.fieldOfStudy field, Staff teacher){
+    public void updateCourse(int id, Course updateCourse, Course.types type, Course.fieldOfStudy field, Staff teacher) {
         Course oldCourse = courseRepository.findById(id);
         oldCourse.setName(updateCourse.getName());
         oldCourse.setDescription(updateCourse.getDescription());
@@ -37,7 +44,7 @@ public class CourseService {
         courseRepository.save(oldCourse);
     }
 
-    public List<Course> CoursesNotEnrolled(int id){
+    public List<Course> CoursesNotEnrolled(int id) {
         List<Course> courses = courseRepository.findAll();
         List<Course> coursesStudent = studentCourseRepository.findAllByStudent((Student) userRepository.findById(id)).stream().map(StudentCourse::getTeacherCourse).toList();
         courses.removeAll(coursesStudent);

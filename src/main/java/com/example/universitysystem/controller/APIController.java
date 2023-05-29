@@ -1,5 +1,11 @@
-package com.example.universitysystem.controller;
+/*
+ * API Controller
+ * interface to easily change objects
+ * Author:      Patrick Foessl
+ * Last Change: 29.05.2023
+ */
 
+package com.example.universitysystem.controller;
 import com.example.universitysystem.model.Course;
 import com.example.universitysystem.model.Room;
 import com.example.universitysystem.model.Staff;

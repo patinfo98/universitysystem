@@ -34,7 +34,7 @@
                 <option th:each="type:${types}"
                         th:value="${type}"
                         th:text="${type}"
-                        th:selected="${course.getType()}">
+                        th:selected="${type == course.getType()}">
                 </option>
               </select>
             </p>
@@ -44,7 +44,7 @@
                   <option th:each="field:${fields}"
                           th:value="${field}"
                           th:text="${field}"
-                          th:selected="${course.getField()}">
+                          th:selected="${field == course.getField()}">
                   </option>
               </select>
           </p>
@@ -57,7 +57,7 @@
                 <option th:each="teacher:${teachers}"
                         th:value="${teacher}"
                         th:text="${teacher}"
-                        th:selected="${course.getStaff()?.getLastName()?: null}">
+                        th:selected="${teacher == course.getStaff()?.getLastName()?: null}">
                 </option>
               </select>
             </p>

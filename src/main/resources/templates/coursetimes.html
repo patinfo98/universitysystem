@@ -12,6 +12,17 @@
   <title>coursetimes</title>
 </head>
 <body>
+<nav class="navbar navbar-expand navbar-light bg-light">
+  <div class="navbar-nav">
+    <a class="nav-item nav-link" href="/plan">CoursePlan</a>
+    <a class="nav-item nav-link" href="/students">Students</a>
+    <a class="nav-item nav-link" href="/teachers">Teachers</a>
+    <a class="nav-item nav-link active" href="/courses">Courses</a>
+    <a class="nav-item nav-link" href="/rooms">Rooms</a>
+  </div>
+  </div>
+</nav>
+
 <div class="container-fluid text-center d-flex align-items-center justify-content-center" >
   <div th:if="${times==null}">
     no courstimes yet
@@ -106,6 +117,10 @@
     var doShow = [[${error}]];
     if(doShow) {
       showPopup();
+
+    }
+    else {
+      closePopup();
     }
 
     function showPopup() {

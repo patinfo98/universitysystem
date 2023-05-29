@@ -1,17 +1,18 @@
+/*
+ * StudentCourseService
+ * methods affecting students and their respective courses
+ * Author:      Patrick Foessl
+ * Last Change: 29.05.2023
+ */
+
 package com.example.universitysystem.service;
 
 import com.example.universitysystem.model.Course;
 import com.example.universitysystem.model.Student;
 import com.example.universitysystem.model.StudentCourse;
-import com.example.universitysystem.model.TimeTable;
 import com.example.universitysystem.repository.StudentCourseRepository;
 import com.example.universitysystem.repository.TimetableRepository;
 import org.springframework.stereotype.Service;
-
-import java.time.Duration;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class StudentCourseService {

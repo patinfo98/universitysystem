@@ -15,8 +15,7 @@
 
 <nav class="navbar navbar-expand navbar-light bg-light">
   <div class="navbar-nav">
-    <a th:if="${role == 'admin'}" class="nav-item nav-link" href="/plan/admin">CoursePlan</a>
-    <a th:if="${role == 'student'}" class="nav-item nav-link" href="/plan/student">CoursePlan</a>
+    <a class="nav-item nav-link" href="/plan">CoursePlan</a>
     <a th:if="${role == 'admin'}" class="nav-item nav-link active" href="/students">Students</a>
     <a th:if="${role == 'admin'}" class="nav-item nav-link" href="/teachers">Teachers</a>
     <a th:href="@{/show/student/courses/{id}(id=${id})}" th:if="${role == 'student'}" class="nav-item nav-link active" href="/courses">Courses</a>
@@ -32,7 +31,7 @@
     </div>
     <h2 class="my-2" th:text="${student} + s + ' ' + Courses"></h2>
     <p><a th:href="@{/add/student/course/{id}(id=${id})}" class="btn btn-dark">Add Courses</a></p>
-    <table class="table table-striped">
+    <table class="table">
       <thead>
       <tr>
         <th>Name</th>

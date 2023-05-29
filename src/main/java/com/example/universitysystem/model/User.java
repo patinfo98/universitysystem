@@ -1,3 +1,10 @@
+/*
+ * User Database Object
+ * contains basic user information for staff and student
+ * Author:      Patrick Foessl
+ * Last Change: 29.05.2023
+ */
+
 package com.example.universitysystem.model;
 
 import jakarta.persistence.*;
@@ -5,7 +12,7 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name="users")
+@Table(name = "users")
 @Inheritance(strategy = InheritanceType.JOINED)
 
 public abstract class User {
@@ -14,18 +21,15 @@ public abstract class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "firstLogin", length = 20, nullable = false )
-    private Boolean firstLogin;
-
-    @Column(name = "last_name", length = 20, nullable = false )
+    @Column(name = "last_name", length = 20, nullable = false)
     private String lastName;
 
-    @Column(name = "first_name", length = 20, nullable = false )
+    @Column(name = "first_name", length = 20, nullable = false)
     private String firstName;
 
-    @Column(name = "email", length = 50, nullable = false )
+    @Column(name = "email", length = 50, nullable = false)
     private String email;
 
-    @Column(name = "password", length = 20, nullable = false )
+    @Column(name = "password", length = 20, nullable = false)
     private String password;
 }

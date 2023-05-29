@@ -9,8 +9,6 @@ import java.util.List;
 
 public interface CourseRoomTimePreferenceRepository extends JpaRepository<CourseRoomTimePreference, Integer> {
 
-    List<CourseRoomTimePreference> findByDay(days day);
-
     List<CourseRoomTimePreference> findByCourse_Staff_Id(int id);
 
     void deleteByRoom(Room room);
